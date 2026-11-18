@@ -1,0 +1,19 @@
+data_fe_bcc
+# generated_by: structure_lib._cif_path
+# derived_from: motif=fe_bcc absorber=Fe spacegroup='Im-3m' (asym_sites + symmetry expansion)
+# provenance: algorithm-generated minimal CIF; NOT an experimental/database source CIF — never a formal CN source
+_cell_length_a 2.8664
+_cell_length_b 2.8664
+_cell_length_c 2.8664
+_cell_angle_alpha 90
+_cell_angle_beta 90
+_cell_angle_gamma 90
+_symmetry_space_group_name_H-M 'Im-3m'
+loop_
+_atom_site_label
+_atom_site_type_symbol
+_atom_site_fract_x
+_atom_site_fract_y
+_atom_site_fract_z
+_atom_site_occupancy
+Fe1 Fe 0.0 0.0 0.0 1.0

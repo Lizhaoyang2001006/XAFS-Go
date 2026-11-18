@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xafs-auto-pipeline"
+version = "2.1.0"
+description = "Physics-gated automated XAFS/EXAFS processing, structure identification, and quantitative CN fitting pipeline."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=2.0",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "xraylarch>=2024.1",
+    "gemmi>=0.6",
+    "xraydb>=4.0",
+    "requests>=2.28",
+    "PyYAML>=6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q"

@@ -1,0 +1,67 @@
+# ==========================================
+# 1. Python 编译缓存与虚拟环境
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ==========================================
+# 2. 测试、CI 报告与静态检查缓存
+# ==========================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+ci_report.json
+ci_report.md
+
+# ==========================================
+# 3. AI Agent IDE、编辑器配置与备份目录
+# ==========================================
+.trae/
+.workbuddy/
+.cursor/
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.backup/
+sandbox/
+
+# ==========================================
+# 4. 管线输出、临时草稿与大体积实验数据/缓存
+# ==========================================
+xafs_out/
+xafs_out_batch/
+_real_cn_validation/
+_artemis_selftest/
+*_cache/
+_feff_cache/
+_dynamic_cache/
+_structure_lib/_phase_cache/
+_structure_lib/_dynamic_cache/
+_structure_lib/cif_crawl_report.json
+# IIT-Lytle 未明确再分发许可证：T5 真实谱保留为本地构建产物，可用 calibrate_t5.py / tools 重建
+data/standards_raw/
+_standards_lib/
+data/raw/
+data/private/
+data/练手数据/Examples.zip
+*.log
+*.h5
+*.hdf5
+*.npz
+logs/
+patches/
+stage2_all_units.diff
+first.json

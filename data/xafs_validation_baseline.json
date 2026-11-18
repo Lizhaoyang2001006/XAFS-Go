@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "scope": "Windows production diagnostic fits; not evidence of absolute CN accuracy",
+  "environment": {
+    "python": "3.13.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {"numpy": "2.3.2", "scipy": "1.17.1", "xraylarch": "2026.3.1", "gemmi": "0.7.5"}
+  },
+  "protocol": {
+    "absorber": "Fe", "s02": 0.803, "kmin": 3.0, "kmax": 12.0,
+    "kweight": 2, "strict": true, "e0_method": "derivative",
+    "fit": "xafs_fit.run identify=True fit=True; default automatic shell selection",
+    "csv": "xafs_report.fit_rows_from_output('lepidocrocite', fit_out); utf-8-sig decoded, universal newline LF, UTF-8 SHA256",
+    "numeric_comparison": "exact float equality; never update baseline automatically"
+  },
+  "single_scan": {
+    "scans": ["data/练手数据/02_Fe_standards/Fe_lepidocrocite.000"],
+    "align": false,
+    "data_sha256": "a609ca9b347e4d1daf8d9ebcef4f801968145eb897fb95101e9d393b3c926b5c",
+    "r_factor": 0.026950782349611034,
+    "delta_e0": -2.594653910901912,
+    "paths": [
+      {"N": 6.414649738735905, "R": 2.0014697610883228, "sigma2": 0.00582460062009372},
+      {"N": 7.634782708086178, "R": 3.0684650575298176, "sigma2": 0.006780018545979676}
+    ],
+    "csv_sha256": "67690f912ef8d13b1c899888b6e58c372342aaed7686e288ab7887e181135c5f"
+  },
+  "three_scan": {
+    "scans": ["data/练手数据/02_Fe_standards/Fe_lepidocrocite.000", "data/练手数据/02_Fe_standards/Fe_lepidocrocite.100", "data/练手数据/02_Fe_standards/Fe_lepidocrocite.200"],
+    "align": true,
+    "data_sha256": "2f98df15fc6a213c26ed6c42926e27936e07a93230fe8fbdbed4ea3037a4f24a",
+    "r_factor": 0.027393010786739527,
+    "delta_e0": -2.5614904572509203,
+    "paths": [
+      {"N": 6.382655795674828, "R": 2.0017928742393605, "sigma2": 0.005855708092158458},
+      {"N": 7.582032502323985, "R": 3.069395668458681, "sigma2": 0.006736715308259129}
+    ],
+    "csv_sha256": "906ff8c3e7d5fd645d8c0c4a89f9a9dba17ad3237dacbb1e9799a8b0d9d25cb6"
+  },
+  "historical_review": {
+    "approximate_only": {"r_factor": 0.0273, "N": 6.35, "R": 2.002},
+    "not_an_exact_frozen_reference": true,
+    "legacy_demo": {"r_factor": 0.07434158598395589, "N": 6.554947942205075, "R": 1.9936626860951747, "third_shell_sigma2": 0.00010000000023249448},
+    "note": "Historical approximations cannot establish bitwise preservation. Legacy manual three-shell report demo differs from the automatic production fit and hits a sigma2 lower bound; it is not an accepted quantitative baseline. No solver, gate or production constants were changed to freeze these measurements."
+  }
+}

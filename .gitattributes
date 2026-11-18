@@ -1,0 +1,8 @@
+# 默认按文本处理，仓库内统一 LF
+* text=auto
+
+# 实验数据保持原始字节，不做换行符转换
+data/** -text
+
+# phase pack 的 CIF 以 sha256 逐字节校验，必须原样保存
+_structure_lib/_phase_pack/** -text

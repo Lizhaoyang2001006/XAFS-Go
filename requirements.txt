@@ -1,0 +1,12 @@
+numpy>=2.0
+scipy>=1.10
+matplotlib>=3.7
+xraylarch>=2024.1
+gemmi>=0.6
+# --- 代码直接 import、但旧版 requirements 漏声明的依赖 ---
+# athena.py        -> xraydb（xraylarch 的传递依赖，显式声明避免版本漂移）
+# cif_crawler.py   -> requests
+# xafs_config.py   -> PyYAML
+xraydb>=4.0
+requests>=2.28
+PyYAML>=6.0

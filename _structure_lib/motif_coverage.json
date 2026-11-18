@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "generated_by": "tools/backfill_motif_provenance.py",
+  "note": "motif 覆盖只用于候选索引与审计；正式 CN 由真实 CIF / phase pack 决定，不因 motif 稀疏而放行 prototype。",
+  "absorber_elements": [
+    "Ag",
+    "Au",
+    "Ce",
+    "Co",
+    "Cr",
+    "Cu",
+    "Fe",
+    "Ir",
+    "Mn",
+    "Mo",
+    "Ni",
+    "Pd",
+    "Pt",
+    "Rh",
+    "Ru",
+    "U",
+    "Zn"
+  ],
+  "covered_elements": [
+    "Ag",
+    "Au",
+    "Ce",
+    "Co",
+    "Cr",
+    "Cu",
+    "Fe",
+    "Ir",
+    "Mn",
+    "Mo",
+    "Ni",
+    "Pd",
+    "Pt",
+    "Rh",
+    "Ru",
+    "U",
+    "Zn"
+  ],
+  "missing_elements": [],
+  "library_extra_elements": [],
+  "summary": {
+    "elements_total": 17,
+    "elements_covered": 17,
+    "elements_missing": 0,
+    "motifs": 43,
+    "formal_cn_ready_elements": []
+  },
+  "elements": {
+    "Ag": {
+      "motifs": 1,
+      "motif_ids": [
+        "ag_fcc_cod_9008459"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Au": {
+      "motifs": 1,
+      "motif_ids": [
+        "au_fcc"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Ce": {
+      "motifs": 2,
+      "motif_ids": [
+        "ce_fcc_cod_9010987",
+        "ceo2_fluorite_cod_1562989"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 2,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Co": {
+      "motifs": 6,
+      "motif_ids": [
+        "co3o4_mixed",
+        "co3o4_oct",
+        "co3o4_spinel_cod_9005888",
+        "co_hcp",
+        "con4_planar",
+        "coo_rocksalt_cod_1533087"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 4,
+      "constructed": 2,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Cr": {
+      "motifs": 1,
+      "motif_ids": [
+        "cr_bcc"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Cu": {
+      "motifs": 4,
+      "motif_ids": [
+        "cu2o_cuprite_cod_1010941",
+        "cu_fcc",
+        "cun4_planar",
+        "cuo_tenorite_cod_1011148"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 3,
+      "constructed": 1,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Fe": {
+      "motifs": 13,
+      "motif_ids": [
+        "fe2_mu_oxo",
+        "fe2n6_dual",
+        "fe2o3_hematite_cod_1011240",
+        "fe3o4_magnetite_cod_1010369",
+        "fe_bcc",
+        "fen4_planar",
+        "goethite",
+        "hematite",
+        "lepidocrocite",
+        "magnetite_mixed",
+        "magnetite_oct",
+        "magnetite_tet",
+        "wustite"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 2,
+      "generated_only": 7,
+      "constructed": 4,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Ir": {
+      "motifs": 1,
+      "motif_ids": [
+        "ir_fcc_cod_9008470"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Mn": {
+      "motifs": 1,
+      "motif_ids": [
+        "mn_alpha_mn_cod_9008589"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Mo": {
+      "motifs": 1,
+      "motif_ids": [
+        "mo_bcc"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Ni": {
+      "motifs": 4,
+      "motif_ids": [
+        "ni_fcc",
+        "nin4_planar",
+        "nio_bunsenite_cod_1010093",
+        "nioh2_theophrastite_cod_1548811"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 3,
+      "constructed": 1,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Pd": {
+      "motifs": 1,
+      "motif_ids": [
+        "pd_fcc_cod_9008478"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Pt": {
+      "motifs": 3,
+      "motif_ids": [
+        "pt_fcc",
+        "ptcl4_square",
+        "pto2_beta"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 2,
+      "constructed": 1,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Rh": {
+      "motifs": 1,
+      "motif_ids": [
+        "rh_fcc_cod_9008482"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Ru": {
+      "motifs": 1,
+      "motif_ids": [
+        "ru_hcp_cod_9008513"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "U": {
+      "motifs": 1,
+      "motif_ids": [
+        "u_alpha_u_cod_1527120"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    },
+    "Zn": {
+      "motifs": 1,
+      "motif_ids": [
+        "zn_hcp"
+      ],
+      "verified_source_cif": 0,
+      "source_ref_only": 0,
+      "generated_only": 1,
+      "constructed": 0,
+      "unverified": 0,
+      "real_source_cifs": 0,
+      "formal_cn_ready": false
+    }
+  }
+}

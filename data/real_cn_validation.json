@@ -1,0 +1,2235 @@
+{
+  "schema_version": 1,
+  "design": "retrospective independent real-spectrum holdout; not a prospective blinded assay",
+  "selection_note": "Single- and two-shell models were examined on training spectra; all holdout results, including refusals, are retained. No holdout-fitted CN is used to calibrate S02.",
+  "truth_scope": "ideal crystallographic N0; experimental sample stoichiometry/disorder is not independently certified",
+  "environment": {
+    "python": "3.13.14",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "packages": {
+      "numpy": "2.3.2",
+      "scipy": "1.17.1",
+      "xraylarch": "2026.3.1",
+      "gemmi": "0.7.5"
+    }
+  },
+  "cases": [
+    {
+      "case": "ni_oxide_to_hydroxide",
+      "protocol": {
+        "absorber": "Ni",
+        "standard": "Ni-K-NickelOxide.xdi",
+        "standard_phase": "COD:1010093",
+        "standard_n0": 6.0,
+        "fit_shells": 2,
+        "e0_method": "derivative",
+        "holdout": "Ni-K-NickelHydroxide.xdi",
+        "holdout_phase": "COD:1548811",
+        "holdout_n0": 6.0
+      },
+      "standard_data_sha256": "76aaf49839a070a68eda668554c342db2bac034b4d393298ddd412738456865e",
+      "holdout_data_sha256": "1c1bee8441c1e285cce8899dd7f412d4a924befee1cf11d39997cd3b4c2986c3",
+      "independent_input_spectra": true,
+      "relative_budget": 0.3,
+      "status": "validated",
+      "standard_cif_sha256": "8acb2efb0b22afe6500d8274019cd7e7d57198b732e33860fa6f977c0f66bcd4",
+      "calibration_motif_sha256": "5f9b4143301201bf60139151b345d3d34227368aaa3690fd73bfaf6fe91fa84b",
+      "calibration_geometry": "expanded from the verified standard CIF; not a library seed",
+      "calibration": {
+        "absorber": "Ni",
+        "edge": "K",
+        "motif": "COD_1010093@Ni1",
+        "motif_file": "calibration_motif.json",
+        "fixed_CN": 6.0,
+        "R_first": 2.0842,
+        "n_shells": 2,
+        "shell_paths": [
+          {
+            "label": "Ni-O@2.08",
+            "scatterer": "O",
+            "reff": 2.0842,
+            "degen": 6.0
+          },
+          {
+            "label": "Ni-Ni@2.95",
+            "scatterer": "Ni",
+            "reff": 2.9475,
+            "degen": 12.0
+          }
+        ],
+        "e0_method": "derivative",
+        "e0": 8344.9,
+        "k_window": [
+          3.0,
+          12.0
+        ],
+        "protocol": "production_equivalent: 2-shell, N fixed to crystallographic degeneracy, vary s02 + (dR, sigma2) per path + dE0; kw=2; robustness x3",
+        "runs": [
+          {
+            "r_window": [
+              1.484,
+              3.067
+            ],
+            "s02": 0.9686,
+            "s02_err": 0.0159,
+            "rf": 0.0043,
+            "delta_e0": -3.38,
+            "sigma2": 0.0069,
+            "delta_r": -0.0095,
+            "sigma2_at_bound": false,
+            "paths": [
+              {
+                "label": "Ni-O@2.08",
+                "degen": 6.0,
+                "sigma2": 0.0069,
+                "delta_r": -0.0095,
+                "sigma2_at_bound": false
+              },
+              {
+                "label": "Ni-Ni@2.95",
+                "degen": 12.0,
+                "sigma2": 0.0071,
+                "delta_r": 0.0032,
+                "sigma2_at_bound": false
+              }
+            ],
+            "interior": true
+          },
+          {
+            "r_window": [
+              1.484,
+              3.127
+            ],
+            "s02": 0.9654,
+            "s02_err": 0.016,
+            "rf": 0.0047,
+            "delta_e0": -3.4,
+            "sigma2": 0.0068,
+            "delta_r": -0.0096,
+            "sigma2_at_bound": false,
+            "paths": [
+              {
+                "label": "Ni-O@2.08",
+                "degen": 6.0,
+                "sigma2": 0.0068,
+                "delta_r": -0.0096,
+                "sigma2_at_bound": false
+              },
+              {
+                "label": "Ni-Ni@2.95",
+                "degen": 12.0,
+                "sigma2": 0.0071,
+                "delta_r": 0.003,
+                "sigma2_at_bound": false
+              }
+            ],
+            "interior": true
+          },
+          {
+            "r_window": [
+              1.484,
+              3.207
+            ],
+            "s02": 0.9632,
+            "s02_err": 0.0158,
+            "rf": 0.0049,
+            "delta_e0": -3.4,
+            "sigma2": 0.0068,
+            "delta_r": -0.0096,
+            "sigma2_at_bound": false,
+            "paths": [
+              {
+                "label": "Ni-O@2.08",
+                "degen": 6.0,
+                "sigma2": 0.0068,
+                "delta_r": -0.0096,
+                "sigma2_at_bound": false
+              },
+              {
+                "label": "Ni-Ni@2.95",
+                "degen": 12.0,
+                "sigma2": 0.007,
+                "delta_r": 0.003,
+                "sigma2_at_bound": false
+              }
+            ],
+            "interior": true
+          }
+        ],
+        "s02": 0.9654,
+        "s02_err": 0.016,
+        "rf": 0.0049,
+        "spread": 0.0054,
+        "delta_e0": -3.4,
+        "sigma2": 0.0068,
+        "n_variables": 6,
+        "n_independent": 9.42,
+        "plateau": 0.8642,
+        "rbkg_choice": 1.0,
+        "kw_sensitivity": {
+          "1": {
+            "s02": 1.0441,
+            "rf": 0.0065,
+            "delta_e0": -2.94
+          },
+          "3": {
+            "s02": 0.89,
+            "rf": 0.0029,
+            "delta_e0": -3.79
+          }
+        },
+        "checks": {
+          "window_runs_interior": true,
+          "s02_in_range": true,
+          "s02_err_ok": true,
+          "window_spread_ok": true,
+          "sigma2_not_at_bound": true
+        },
+        "pass": true
+      },
+      "calibration_qualified": true,
+      "calibration_reasons": [],
+      "calibration_sha256": "25c98c62bf449c6a5aac1a0e72e6e565ef3612e49fc89952d4ee510c7d643212",
+      "plateau": 0.9751887646024756,
+      "cn_reliable": true,
+      "conditional_cn": {
+        "n_ratio": 0.898973,
+        "n_fit_total": 5.393837,
+        "n0_total": 6.0,
+        "n_status": "ok",
+        "ref_idx": 0,
+        "first_shell_idxs": [
+          0
+        ],
+        "fixed_n_fit": {
+          "r_factor": 0.0399321624298485,
+          "n_variables": 5,
+          "n_independent": 11.69120380964445,
+          "delta_e0": -4.779838770867539,
+          "overfit": false
+        },
+        "conditional_n_fit": {
+          "r_factor": 0.03887480011126703,
+          "n_variables": 6,
+          "n_independent": 11.69120380964445,
+          "delta_e0": -4.450292358968384,
+          "overfit": false
+        },
+        "free_n_fit": {
+          "r_factor": 0.03881192620448224,
+          "n_variables": 7,
+          "n_independent": 11.69120380964445,
+          "delta_e0": -4.426093285611019,
+          "overfit": false
+        },
+        "hamilton_f_test": {
+          "F": 0.15479602309109408,
+          "confidence": 0.29169266187271126,
+          "significant": false,
+          "valid": true,
+          "p_value": 0.7083073381272887
+        },
+        "consistency_passed": true,
+        "qualification_reasons": [],
+        "kmin": 3.0,
+        "kmax": 12.0,
+        "kweight": 2,
+        "fixed_n_paths": [
+          {
+            "label": "Ni-O@2.06",
+            "reff": 2.0689693470340473,
+            "N": 6.0,
+            "N_err": null,
+            "delta_r": 0.009469347034047438,
+            "sigma2": 0.006411725172656284
+          },
+          {
+            "label": "Ni-Ni@3.13",
+            "reff": 3.1233597977956813,
+            "N": 6.0,
+            "N_err": null,
+            "delta_r": -0.0034402022043183325,
+            "sigma2": 0.007289519642020089
+          }
+        ],
+        "conditional_n_paths": [
+          {
+            "label": "Ni-O@2.06",
+            "reff": 2.06989431123172,
+            "N": 5.393837029300855,
+            "N_err": 0.31578033826038576,
+            "delta_r": 0.010394311231720093,
+            "sigma2": 0.005376096551767571
+          },
+          {
+            "label": "Ni-Ni@3.13",
+            "reff": 3.1254040232928704,
+            "N": 6.0,
+            "N_err": null,
+            "delta_r": -0.0013959767071293583,
+            "sigma2": 0.007269501019317958
+          }
+        ]
+      },
+      "formal_cn": {
+        "status": "ok",
+        "rows": [
+          {
+            "phase_id": "COD:1548811",
+            "model_level": "crystal_cif",
+            "source_type": "database_cif",
+            "source_ref": "COD:1548811",
+            "source_cif_sha256": "391e3f741f16500db42c1f12e473fa0519020e3cb0840a28c4a439c1e65a5cd7",
+            "absorber_site": "Ni1",
+            "shell_group": "first_shell",
+            "shell_label": "Ni-O@2.06",
+            "scatterer": "O",
+            "r_cif": 2.0595,
+            "n0": 6.0,
+            "n0_members": 1,
+            "n_fit": 5.393837029300855,
+            "n_status": "fitted",
+            "n_ratio": 0.8989728382168091,
+            "n_err_formal": 0.31578033826038576,
+            "n_err_systematic": 0.3162,
+            "delta_r": 0.010394311231720093,
+            "sigma2": 0.005376096551767571,
+            "delta_e0": -4.450292358968384,
+            "rf": 0.03887480011126703,
+            "s02": 0.9654,
+            "s02_source": "s02_calibration:heldout:ni_oxide_to_hydroxide;standard_sha256:76aaf49839a070a68eda668554c342db2bac034b4d393298ddd412738456865e;certificate_sha256:25c98c62bf449c6a5aac1a0e72e6e565ef3612e49fc89952d4ee510c7d643212",
+            "s02_calibrated": true,
+            "kmin": 3.0,
+            "kmax": 12.0,
+            "kweight": 2,
+            "rmin": 1.4594999999999998,
+            "rmax": 3.5,
+            "n_idp": 11.69120380964445,
+            "n_variables": 6,
+            "cn_label": "cn_conditional",
+            "gate_status": "passed",
+            "reject_reason": "",
+            "flags": "consistency_passed",
+            "assumptions": "first_shell_single_scale_factor;higher_shells_fixed_at_N0;hamilton_f_test_nonsignificant;data_sha256_over_input_files",
+            "data_sha256": "1c1bee8441c1e285cce8899dd7f412d4a924befee1cf11d39997cd3b4c2986c3",
+            "software_version": "xafs-cn-p4plus"
+          },
+          {
+            "phase_id": "COD:1548811",
+            "model_level": "crystal_cif",
+            "source_type": "database_cif",
+            "source_ref": "COD:1548811",
+            "source_cif_sha256": "391e3f741f16500db42c1f12e473fa0519020e3cb0840a28c4a439c1e65a5cd7",
+            "absorber_site": "Ni1",
+            "shell_group": "higher_shell",
+            "shell_label": "Ni-Ni@3.13",
+            "scatterer": "Ni",
+            "r_cif": 3.1268,
+            "n0": 6.0,
+            "n0_members": 1,
+            "n_fit": 6.0,
+            "n_status": "fixed",
+            "n_ratio": 1.0,
+            "n_err_formal": "",
+            "n_err_systematic": "",
+            "delta_r": -0.0013959767071293583,
+            "sigma2": 0.007269501019317958,
+            "delta_e0": -4.450292358968384,
+            "rf": 0.03887480011126703,
+            "s02": 0.9654,
+            "s02_source": "s02_calibration:heldout:ni_oxide_to_hydroxide;standard_sha256:76aaf49839a070a68eda668554c342db2bac034b4d393298ddd412738456865e;certificate_sha256:25c98c62bf449c6a5aac1a0e72e6e565ef3612e49fc89952d4ee510c7d643212",
+            "s02_calibrated": true,
+            "kmin": 3.0,
+            "kmax": 12.0,
+            "kweight": 2,
+            "rmin": 1.4594999999999998,
+            "rmax": 3.5,
+            "n_idp": 11.69120380964445,
+            "n_variables": 6,
+            "cn_label": "cn_conditional",
+            "gate_status": "passed",
+            "reject_reason": "",
+            "flags": "consistency_passed",
+            "assumptions": "first_shell_single_scale_factor;higher_shells_fixed_at_N0;hamilton_f_test_nonsignificant;data_sha256_over_input_files",
+            "data_sha256": "1c1bee8441c1e285cce8899dd7f412d4a924befee1cf11d39997cd3b4c2986c3",
+            "software_version": "xafs-cn-p4plus"
+          }
+        ],
+        "reject_reason": null,
+        "model": {
+          "model_id": "COD:1548811",
+          "absorber": "Ni",
+          "absorber_site": "Ni1",
+          "model_level": "crystal_cif",
+          "source_type": "database_cif",
+          "source_ref": "COD:1548811",
+          "source_cif": "_structure_lib/_phase_cache/COD/1548811/391e3f741f16500db42c1f12e473fa0519020e3cb0840a28c4a439c1e65a5cd7.cif",
+          "source_cif_sha256": "391e3f741f16500db42c1f12e473fa0519020e3cb0840a28c4a439c1e65a5cd7",
+          "cell": {
+            "a": 3.1268,
+            "b": 3.1268,
+            "c": 4.606,
+            "alpha": 90.0,
+            "beta": 90.0,
+            "gamma": 120.0
+          },
+          "spacegroup": "P -3 m 1",
+          "asym_sites": [
+            {
+              "label": "Ni1",
+              "el": "Ni",
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0,
+              "occ": 1.0
+            },
+            {
+              "label": "O1",
+              "el": "O",
+              "x": 0.3333,
+              "y": 0.6667,
+              "z": 0.2153,
+              "occ": 1.0
+            },
+            {
+              "label": "H1",
+              "el": "H",
+              "x": 0.3333,
+              "y": 0.6667,
+              "z": 0.4537,
+              "occ": 1.0
+            }
+          ],
+          "cif_path": "_structure_lib/_phase_cache/COD/1548811/391e3f741f16500db42c1f12e473fa0519020e3cb0840a28c4a439c1e65a5cd7.cif",
+          "occupancy_policy": "explicit",
+          "edits": [],
+          "assumptions": {
+            "p1b": "phase_resolver resolved; verified_source_cif; formal CN gate applies"
+          },
+          "n0_shells": [
+            {
+              "el": "O",
+              "r": 2.05970201541877,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 2.05954378757906,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 2.05954378757906,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 2.059781129338625,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 2.059781129338625,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 2.059781129338625,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 2.0597811293386252,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Ni",
+              "r": 3.1267999999999994,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "Ni",
+                  "r": 3.1267999999999994,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Ni",
+                  "r": 3.1267999999999994,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 3.1268,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 3.1268,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 3.1268000000000002,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 3.1268000000000002,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 3.744228976663521,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 3.744141938142236,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 3.744141938142236,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 3.7441419381422363,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 3.7441419381422363,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 3.7444030537060904,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 3.744403053706091,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 4.0400900707762295,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 4.040009404859783,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 4.040009404859783,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.040130403734452,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.040130403734452,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.040130403734452,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.040130403734452,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Ni",
+              "r": 4.606,
+              "n": 2,
+              "n0": 2.0,
+              "n0_members": [
+                {
+                  "el": "Ni",
+                  "r": 4.606,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Ni",
+                  "r": 4.606,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 4.878127598701844,
+              "n": 12,
+              "n0": 12.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 4.8779605784724716,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 4.8779605784724716,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.8779605784724716,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.877960578472472,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.878161003982904,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.878161003982904,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.878161003982904,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.878161003982904,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.8782612136501555,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.8782612136501555,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.8782612136501555,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.8782612136501555,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 5.108738201855666,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 5.108674410388227,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 5.108674410388227,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.108674410388227,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.108674410388227,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.108865784790543,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.108865784790543,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Ni",
+              "r": 5.516629592125842,
+              "n": 18,
+              "n0": 18.0,
+              "n0_members": [
+                {
+                  "el": "Ni",
+                  "r": 5.415776465106364,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.415776465106364,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.415776465106365,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.415776465106365,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.415776465106366,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.415776465106366,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.130Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.113Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.101Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.091Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.083Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.076Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.070Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.567056155635579,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.065Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.56705615563558,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.061Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.56705615563558,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.057Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.56705615563558,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.053Å < 0.175Å"
+                },
+                {
+                  "el": "Ni",
+                  "r": 5.56705615563558,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.050Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 5.953633852856719,
+              "n": 18,
+              "n0": 18.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 5.8815165760673915,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 5.8815165760673915,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.881599690762666,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.881599690762666,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.881599690762666,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.881599690762666,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9895287613911234,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.093Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9895287613911234,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.081Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9895287613911234,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.072Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.989528761391124,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.065Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9896919920125695,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.059Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9896919920125695,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.054Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9896919920125695,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.050Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9896919920125695,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.046Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9897736056551825,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.043Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.9897736056551825,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.041Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.989773605655183,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.038Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.989773605655183,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.036Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            }
+          ],
+          "warnings": [],
+          "provenance_status": "verified_source_cif"
+        }
+      },
+      "relative_bias": -0.10102716666666656,
+      "within_systematic_budget": true
+    },
+    {
+      "case": "cu_foil_to_oxide",
+      "protocol": {
+        "absorber": "Cu",
+        "standard": "Cu-K-CopperFoil.xdi",
+        "standard_phase": "COD:4105040",
+        "standard_n0": 12.0,
+        "fit_shells": 1,
+        "e0_method": "half_height",
+        "holdout": "Cu-CuO.xdi",
+        "holdout_phase": "COD:1011148",
+        "holdout_n0": 4.0
+      },
+      "standard_data_sha256": "db05273280f8904a7a10f17f26f6d319c99efbb972c769c7605f9d7f9f2007ff",
+      "holdout_data_sha256": "1fdfa97042f00eca0bb4606c45f192d4b759f15fdf0b0be7765617b51cfcd403",
+      "independent_input_spectra": true,
+      "relative_budget": 0.3,
+      "status": "formal_rejected",
+      "standard_cif_sha256": "39726e1afd93226e126184d30eb0e45df8138f9a78c07b5fd59d9a700cb2300c",
+      "calibration_motif_sha256": "43a4cd87b19e2d8d7f6e91aaa9d283fa934e931203815515873723a1d264511d",
+      "calibration_geometry": "expanded from the verified standard CIF; not a library seed",
+      "calibration": {
+        "absorber": "Cu",
+        "edge": "K",
+        "motif": "COD_4105040@Cu",
+        "motif_file": "calibration_motif.json",
+        "fixed_CN": 12.0,
+        "R_first": 2.5328,
+        "n_shells": 1,
+        "shell_paths": [
+          {
+            "label": "Cu-Cu@2.53",
+            "scatterer": "Cu",
+            "reff": 2.5328,
+            "degen": 12.0
+          }
+        ],
+        "e0_method": "half_height",
+        "e0": 8988.1287,
+        "k_window": [
+          3.0,
+          12.0
+        ],
+        "protocol": "production_equivalent: 1-shell, N fixed to crystallographic degeneracy, vary s02 + (dR, sigma2) per path + dE0; kw=2; robustness x3",
+        "runs": [
+          {
+            "r_window": [
+              1.933,
+              2.653
+            ],
+            "s02": 0.8855,
+            "s02_err": 0.0066,
+            "rf": 0.0003,
+            "delta_e0": -1.81,
+            "sigma2": 0.0087,
+            "delta_r": 0.0092,
+            "sigma2_at_bound": false,
+            "paths": [
+              {
+                "label": "Cu-Cu@2.53",
+                "degen": 12.0,
+                "sigma2": 0.0087,
+                "delta_r": 0.0092,
+                "sigma2_at_bound": false
+              }
+            ],
+            "interior": true
+          },
+          {
+            "r_window": [
+              1.933,
+              2.713
+            ],
+            "s02": 0.8935,
+            "s02_err": 0.0098,
+            "rf": 0.0007,
+            "delta_e0": -1.72,
+            "sigma2": 0.0088,
+            "delta_r": 0.0098,
+            "sigma2_at_bound": false,
+            "paths": [
+              {
+                "label": "Cu-Cu@2.53",
+                "degen": 12.0,
+                "sigma2": 0.0088,
+                "delta_r": 0.0098,
+                "sigma2_at_bound": false
+              }
+            ],
+            "interior": true
+          },
+          {
+            "r_window": [
+              1.933,
+              2.793
+            ],
+            "s02": 0.9013,
+            "s02_err": 0.0153,
+            "rf": 0.0018,
+            "delta_e0": -1.64,
+            "sigma2": 0.0088,
+            "delta_r": 0.0102,
+            "sigma2_at_bound": false,
+            "paths": [
+              {
+                "label": "Cu-Cu@2.53",
+                "degen": 12.0,
+                "sigma2": 0.0088,
+                "delta_r": 0.0102,
+                "sigma2_at_bound": false
+              }
+            ],
+            "interior": true
+          }
+        ],
+        "s02": 0.8935,
+        "s02_err": 0.0153,
+        "rf": 0.0018,
+        "spread": 0.0158,
+        "delta_e0": -1.64,
+        "sigma2": 0.0088,
+        "n_variables": 4,
+        "n_independent": 4.47,
+        "plateau": 0.8555,
+        "rbkg_choice": 0.7,
+        "kw_sensitivity": {
+          "1": {
+            "s02": 0.8667,
+            "rf": 0.0013,
+            "delta_e0": -1.9
+          },
+          "3": {
+            "s02": 0.9017,
+            "rf": 0.0007,
+            "delta_e0": -2.07
+          }
+        },
+        "checks": {
+          "window_runs_interior": true,
+          "s02_in_range": true,
+          "s02_err_ok": true,
+          "window_spread_ok": true,
+          "sigma2_not_at_bound": true
+        },
+        "pass": true
+      },
+      "calibration_qualified": true,
+      "calibration_reasons": [],
+      "calibration_sha256": "19525938fb94c58d8c54dbfb7b5505c2c3c535fbd7146c00e5a31027ac3fd224",
+      "plateau": 0.9153726181364583,
+      "cn_reliable": true,
+      "conditional_cn": {
+        "n_ratio": 0.601378,
+        "n_fit_total": 2.405514,
+        "n0_total": 4.0,
+        "n_status": "warning",
+        "ref_idx": 0,
+        "first_shell_idxs": [
+          0
+        ],
+        "fixed_n_fit": {
+          "r_factor": 0.07470064143412505,
+          "n_variables": 7,
+          "n_independent": 12.334635413576363,
+          "delta_e0": 7.983749092444129,
+          "overfit": false
+        },
+        "conditional_n_fit": {
+          "r_factor": 0.034485483012913744,
+          "n_variables": 8,
+          "n_independent": 12.334635413576363,
+          "delta_e0": 9.699734527479016,
+          "overfit": false
+        },
+        "free_n_fit": {
+          "r_factor": 0.029727557928143352,
+          "n_variables": 10,
+          "n_independent": 12.334635413576363,
+          "delta_e0": 10.573213554326378,
+          "overfit": false
+        },
+        "hamilton_f_test": {
+          "F": 5.054824077420912,
+          "confidence": 0.9173609096795607,
+          "significant": false,
+          "valid": true,
+          "p_value": 0.08263909032043926
+        },
+        "consistency_passed": false,
+        "qualification_reasons": [
+          "条件 CN Cu-O@2.77 σ² 撞下界"
+        ],
+        "kmin": 3.0,
+        "kmax": 12.0,
+        "kweight": 2,
+        "fixed_n_paths": [
+          {
+            "label": "Cu-O@1.95",
+            "reff": 1.9575894136390946,
+            "N": 4.0,
+            "N_err": null,
+            "delta_r": 0.010389413639094541,
+            "sigma2": 0.009412901773321002
+          },
+          {
+            "label": "Cu-O@2.77",
+            "reff": 2.8492675077142886,
+            "N": 2.0,
+            "N_err": null,
+            "delta_r": 0.0829675077142882,
+            "sigma2": 0.00010000000000000002
+          },
+          {
+            "label": "Cu-Cu@3.01",
+            "reff": 3.0419061111627133,
+            "N": 4.0,
+            "N_err": null,
+            "delta_r": 0.1575061111627132,
+            "sigma2": 0.021278965083181656
+          }
+        ],
+        "conditional_n_paths": [
+          {
+            "label": "Cu-O@1.95",
+            "reff": 1.96498867919605,
+            "N": 2.405513514748715,
+            "N_err": 0.09316314606835627,
+            "delta_r": 0.017788679196050015,
+            "sigma2": 0.0029669390354412893
+          },
+          {
+            "label": "Cu-O@2.77",
+            "reff": 2.8530796959863194,
+            "N": 2.0,
+            "N_err": null,
+            "delta_r": 0.08677969598631938,
+            "sigma2": 0.0001000000000000002
+          },
+          {
+            "label": "Cu-Cu@3.01",
+            "reff": 3.0622610109214983,
+            "N": 4.0,
+            "N_err": null,
+            "delta_r": 0.17786101092149836,
+            "sigma2": 0.019376014684515
+          }
+        ]
+      },
+      "formal_cn": {
+        "status": "consistency_failed",
+        "rows": [],
+        "reject_reason": "条件 CN Cu-O@2.77 σ² 撞下界",
+        "model": {
+          "model_id": "COD:1011148",
+          "absorber": "Cu",
+          "absorber_site": "Cu1",
+          "model_level": "crystal_cif",
+          "source_type": "database_cif",
+          "source_ref": "COD:1011148",
+          "source_cif": "_structure_lib/_phase_cache/COD/1011148/47c498e66a280fde4854ab4697fc9e5b90b0c199faef202206f60e3da6cf97d7.cif",
+          "source_cif_sha256": "47c498e66a280fde4854ab4697fc9e5b90b0c199faef202206f60e3da6cf97d7",
+          "cell": {
+            "a": 4.653,
+            "b": 3.41,
+            "c": 5.108,
+            "alpha": 90.0,
+            "beta": 99.48,
+            "gamma": 90.0
+          },
+          "spacegroup": "C 1 2/c 1",
+          "asym_sites": [
+            {
+              "label": "Cu1",
+              "el": "Cu",
+              "x": 0.25,
+              "y": 0.25,
+              "z": 0.0,
+              "occ": 1.0
+            },
+            {
+              "label": "O1",
+              "el": "O",
+              "x": 0.0,
+              "y": 0.916,
+              "z": 0.75,
+              "occ": 1.0
+            }
+          ],
+          "cif_path": "_structure_lib/_phase_cache/COD/1011148/47c498e66a280fde4854ab4697fc9e5b90b0c199faef202206f60e3da6cf97d7.cif",
+          "occupancy_policy": "explicit",
+          "edits": [],
+          "assumptions": {
+            "p1b": "phase_resolver resolved; verified_source_cif; formal CN gate applies"
+          },
+          "n0_shells": [
+            {
+              "el": "O",
+              "r": 1.947481354831115,
+              "n": 4,
+              "n0": 4.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 1.9472391046236242,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 1.9472391046236242,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 1.947723605038606,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 1.9477236050386062,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 2.7662735458691383,
+              "n": 2,
+              "n0": 2.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 2.7662735458691383,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 2.7662735458691383,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 2.8843764057418024,
+              "n": 4,
+              "n0": 4.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 2.8843764057418024,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 2.8843764057418024,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 2.8843764057418024,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 2.8843764057418024,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 3.1001581245395964,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 3.070820900020058,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.070820900020058,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.070820900020058,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.070820900020058,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.1588325735786724,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.070Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.1588325735786724,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.059Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 3.4792407468487294,
+              "n": 4,
+              "n0": 4.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 3.400176178027336,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 3.400176178027337,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 3.558305315670122,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.105Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 3.558305315670122,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.079Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 3.41,
+              "n": 2,
+              "n0": 2.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 3.41,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.41,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 3.7273064365702933,
+              "n": 2,
+              "n0": 2.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 3.7273064365702933,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 3.7273064365702933,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 3.8577408180859227,
+              "n": 2,
+              "n0": 2.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 3.8577408180859227,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 3.8577408180859227,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 4.0711472157948005,
+              "n": 2,
+              "n0": 2.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 4.0711472157948005,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 4.0711472157948005,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 4.441700408041275,
+              "n": 8,
+              "n0": 8.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 4.335304735848883,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 4.335304735848883,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.391156617751704,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.037Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.3911566177517045,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.028Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.519857024234976,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.125Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.519857024234976,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.104Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.520483254329537,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.090Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.520483254329537,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.079Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 4.649840157786756,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 4.648260236680135,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 4.648260236680135,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 4.648260236680135,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 4.648260236680135,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 4.653,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.004Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 4.653,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.003Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 4.801871058195652,
+              "n": 8,
+              "n0": 8.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 4.759173774882174,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 4.759173774882175,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.759768518811997,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.759768518811997,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.815330822547441,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.045Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.815330822547441,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.037Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.873211116540996,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.082Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 4.873211116540996,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.071Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 5.12716041734058,
+              "n": 10,
+              "n0": 10.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 5.051822767288886,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.051822767288886,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.051822767288886,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.051822767288886,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.108,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.045Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.108,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.037Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.212078276062565,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.121Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.212078276062565,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.106Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.212078276062565,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.094Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.212078276062565,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.085Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 5.280036326982556,
+              "n": 4,
+              "n0": 4.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 5.254399659940109,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 5.254399659940109,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.305672994025003,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.034Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.305672994025004,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.026Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 5.56525620621501,
+              "n": 4,
+              "n0": 4.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 5.510970279317993,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 5.510970279317994,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.619542133112026,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.072Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.619542133112026,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.054Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 5.656887840801621,
+              "n": 16,
+              "n0": 16.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 5.522381841724033,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.522381841724033,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.522381841724033,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.522381841724033,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.619237248061341,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.077Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.619237248061341,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.065Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.619237248061341,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.055Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.619237248061341,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.048Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.717179461937503,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.130Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.717179461937503,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.117Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.717179461937503,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.106Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.717179461937503,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.098Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.768752811483605,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.138Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.768752811483605,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.128Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.768752811483605,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.119Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.768752811483605,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.112Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "O",
+              "r": 5.917165050031241,
+              "n": 6,
+              "n0": 6.0,
+              "n0_members": [
+                {
+                  "el": "O",
+                  "r": 5.8574788611208035,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "O",
+                  "r": 5.8574788611208035,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.896524275416444,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.026Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.896524275416444,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.020Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.997492013556479,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.096Å < 0.175Å"
+                },
+                {
+                  "el": "O",
+                  "r": 5.997492013556479,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.080Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            },
+            {
+              "el": "Cu",
+              "r": 5.9156521233247545,
+              "n": 4,
+              "n0": 4.0,
+              "n0_members": [
+                {
+                  "el": "Cu",
+                  "r": 5.9156521233247545,
+                  "occ": 1.0,
+                  "merged": false,
+                  "merge_reason": "first member"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.9156521233247545,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.9156521233247545,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                },
+                {
+                  "el": "Cu",
+                  "r": 5.9156521233247545,
+                  "occ": 1.0,
+                  "merged": true,
+                  "merge_reason": "sub-rayleigh Δr=0.000Å < 0.175Å"
+                }
+              ],
+              "sub_rayleigh_grouped": true
+            }
+          ],
+          "warnings": [],
+          "provenance_status": "verified_source_cif"
+        }
+      },
+      "relative_bias": -0.39862149999999996,
+      "within_systematic_budget": false,
+      "reason": "条件 CN Cu-O@2.77 σ² 撞下界"
+    },
+    {
+      "case": "ni_foil_default_protocol",
+      "protocol": {
+        "absorber": "Ni",
+        "standard": "Ni-K-NickelFoil.xdi",
+        "standard_phase": "COD:1534892",
+        "standard_n0": 12.0,
+        "fit_shells": 1,
+        "e0_method": "derivative",
+        "holdout": "Ni-K-NickelHydroxide.xdi",
+        "holdout_phase": "COD:1548811",
+        "holdout_n0": 6.0
+      },
+      "standard_data_sha256": "8d8d677f6d17937a4d24d1dada33bc156e8c301e5c61d98ea213c25c7693c5a4",
+      "holdout_data_sha256": "1c1bee8441c1e285cce8899dd7f412d4a924befee1cf11d39997cd3b4c2986c3",
+      "independent_input_spectra": true,
+      "relative_budget": 0.3,
+      "status": "calibration_rejected",
+      "standard_cif_sha256": "adb86b38b5313592734259a0ff2bb537fc60acb92793015ee8a74a41b9966cdd",
+      "calibration_motif_sha256": "2cc1945eff9f2249e4b8489eaf11f2b86e4c4e19bac018680e4e690075d3093e",
+      "calibration_geometry": "expanded from the verified standard CIF; not a library seed",
+      "reason": "[S3] 归一化失败：边后平台 = 0.816（阈值 0.85–1.15）。稀释样品的低 Z 基体呈 E^-3 衰减，直线外推扣不掉，此时 FT 峰位与幅度均不可引用（如为已知厚样/稀释标样，可加 --no-strict 降级为警告）"
+    },
+    {
+      "case": "co_foil_default_protocol",
+      "protocol": {
+        "absorber": "Co",
+        "standard": "Co-K-CobaltFoil.xdi",
+        "standard_phase": "COD:9008492",
+        "standard_n0": 12.0,
+        "fit_shells": 1,
+        "e0_method": "derivative",
+        "holdout": "Co-K-CoO.xdi",
+        "holdout_phase": "COD:1533087",
+        "holdout_n0": 6.0
+      },
+      "standard_data_sha256": "cc2a11e956470f4113d6fd55c04bff792c15126d9d139407331de2db415e82cb",
+      "holdout_data_sha256": "9f103a1ba25b8396f15d0f3d64e2917e908a1d4190877dccaeaa3cb36f527501",
+      "independent_input_spectra": true,
+      "relative_budget": 0.3,
+      "status": "calibration_rejected",
+      "standard_cif_sha256": "bd9d57408d901e3ff966ba0ebe19ced70e1f1b62a4ef47fda801a39ecbb5344a",
+      "calibration_motif_sha256": "630654efeb44d8d4077f6e49a8b8b5918c63e5fc37acd4914ecbe4ed632dc425",
+      "calibration_geometry": "expanded from the verified standard CIF; not a library seed",
+      "reason": "[S3] 归一化失败：边后平台 = 0.816（阈值 0.85–1.15）。稀释样品的低 Z 基体呈 E^-3 衰减，直线外推扣不掉，此时 FT 峰位与幅度均不可引用（如为已知厚样/稀释标样，可加 --no-strict 降级为警告）"
+    }
+  ],
+  "validated_cases": [
+    "ni_oxide_to_hydroxide"
+  ],
+  "all_cases_validated": false,
+  "universal_cn_accuracy_established": false
+}

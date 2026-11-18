@@ -1,0 +1,599 @@
+{
+ "absorber": "Ce",
+ "status": "calibrated",
+ "generated_at": "2026-11-09T17:27:37",
+ "protocol": "production_equivalent: N fixed to crystallographic degeneracy, vary s02 + (dR, sigma2) per path + dE0; kw=2; robustness x3; larch normalization",
+ "static_absorber_py_unchanged": true,
+ "apply_to_absorber_py": false,
+ "runtime_override": "--s02",
+ "attempts": [
+  {
+   "standard": "data\\bmm_standards\\Data\\Ce\\Ce-L3-CeO2.xdi",
+   "standard_exists": true,
+   "motif": "ceo2_fluorite_cod_1562989",
+   "motif_file": null,
+   "strict": false,
+   "kmin": 3.5,
+   "kmax": 12.0,
+   "rmin": 1.6,
+   "e0_method": "derivative",
+   "manual_e0": null,
+   "fit_shells": 1,
+   "note": "CeO2 荧光计数 xmu，larch 归一化 plateau≈1.20；rmin=1.6 覆盖第一壳并增加 N_idp。P5-B 复核：导数 E0 下 ΔE0≈9.8–10.2 eV 贴 E0_MAX；half_height 使 ΔE0 升到 12.9–13.5 eV；自由 σ² 塌到 1e-4 下界，固定 σ² 时 S₀² 随假设值从 0.54 漂到 0.80（无唯一解）；加 Ce–Ce 第二壳Rf=0.127、ΔR 撞界。不能作为可靠标定",
+   "provenance": {
+    "source_path": "data\\bmm_standards\\Data\\Ce\\Ce-L3-CeO2.xdi",
+    "source_sha256": "1f679ebd0fb31ed37bca9e8ba125ad06fc0b08554052f8329a2ce7386b8c1e7e",
+    "committed": true,
+    "transform": null,
+    "used_path": "data\\bmm_standards\\Data\\Ce\\Ce-L3-CeO2.xdi",
+    "used_sha256": "1f679ebd0fb31ed37bca9e8ba125ad06fc0b08554052f8329a2ce7386b8c1e7e"
+   },
+   "result": {
+    "absorber": "Ce",
+    "edge": "L3",
+    "motif": "ceo2_fluorite_cod_1562989",
+    "motif_file": null,
+    "fixed_CN": 8.0,
+    "R_first": 2.3414,
+    "n_shells": 1,
+    "shell_paths": [
+     {
+      "label": "Ce-O@2.34",
+      "scatterer": "O",
+      "reff": 2.3414,
+      "degen": 8.0
+     }
+    ],
+    "e0_method": "derivative",
+    "e0": 5726.0,
+    "k_window": [
+     3.5,
+     12.0
+    ],
+    "protocol": "production_equivalent: 1-shell, N fixed to crystallographic degeneracy, vary s02 + (dR, sigma2) per path + dE0; kw=2; robustness x3",
+    "runs": [
+     {
+      "r_window": [
+       1.6,
+       2.461
+      ],
+      "s02": 0.466,
+      "s02_err": 0.0223,
+      "rf": 0.0234,
+      "delta_e0": 10.2,
+      "sigma2": 0.0001,
+      "delta_r": 0.0164,
+      "sigma2_at_bound": true,
+      "paths": [
+       {
+        "label": "Ce-O@2.34",
+        "degen": 8.0,
+        "sigma2": 0.0001,
+        "delta_r": 0.0164,
+        "sigma2_at_bound": true
+       }
+      ],
+      "interior": false
+     },
+     {
+      "r_window": [
+       1.6,
+       2.521
+      ],
+      "s02": 0.4641,
+      "s02_err": 0.0284,
+      "rf": 0.0406,
+      "delta_e0": 10.04,
+      "sigma2": 0.0001,
+      "delta_r": 0.016,
+      "sigma2_at_bound": true,
+      "paths": [
+       {
+        "label": "Ce-O@2.34",
+        "degen": 8.0,
+        "sigma2": 0.0001,
+        "delta_r": 0.016,
+        "sigma2_at_bound": true
+       }
+      ],
+      "interior": false
+     },
+     {
+      "r_window": [
+       1.6,
+       2.601
+      ],
+      "s02": 0.4627,
+      "s02_err": 0.0343,
+      "rf": 0.0617,
+      "delta_e0": 9.78,
+      "sigma2": 0.0001,
+      "delta_r": 0.0154,
+      "sigma2_at_bound": true,
+      "paths": [
+       {
+        "label": "Ce-O@2.34",
+        "degen": 8.0,
+        "sigma2": 0.0001,
+        "delta_r": 0.0154,
+        "sigma2_at_bound": true
+       }
+      ],
+      "interior": false
+     }
+    ],
+    "s02": null,
+    "s02_err": null,
+    "rf": null,
+    "spread": null,
+    "delta_e0": null,
+    "sigma2": null,
+    "n_variables": 4,
+    "n_independent": 4.99,
+    "plateau": 1.203,
+    "rbkg_choice": 0.9,
+    "kw_sensitivity": {
+     "1": {
+      "s02": 0.4123,
+      "rf": 0.0225,
+      "delta_e0": 10.69
+     },
+     "3": {
+      "s02": 0.4517,
+      "rf": 0.0402,
+      "delta_e0": 12.69
+     }
+    },
+    "checks": {
+     "window_runs_interior": false,
+     "s02_in_range": false,
+     "s02_err_ok": false,
+     "window_spread_ok": false,
+     "sigma2_not_at_bound": false
+    },
+    "pass": false
+   },
+   "status": "gated_out",
+   "reason": "门禁未通过: window_runs_interior, s02_in_range, s02_err_ok, window_spread_ok, sigma2_not_at_bound"
+  },
+  {
+   "standard": "data\\bmm_standards\\Data\\Ce\\Ce-L3-CeriumDioxide.xdi",
+   "standard_exists": true,
+   "motif": "ceo2_fluorite_cod_1562989",
+   "motif_file": null,
+   "strict": true,
+   "kmin": 3.5,
+   "kmax": 12.0,
+   "rmin": 1.6,
+   "e0_method": "derivative",
+   "manual_e0": null,
+   "fit_shells": 1,
+   "note": "同相透射谱，但边步被背景淹没（归一化平台≈2.27）；数值上虽可通过宽松拟合，属于归一化伪迹，严格归一化门禁必须拒绝，不得用于标定",
+   "provenance": {
+    "source_path": "data\\bmm_standards\\Data\\Ce\\Ce-L3-CeriumDioxide.xdi",
+    "source_sha256": "e4d10395c858d41f56a1cddb173745fe71ca45405d532bd8e9cf603894db6603",
+    "committed": true,
+    "transform": null,
+    "used_path": "data\\bmm_standards\\Data\\Ce\\Ce-L3-CeriumDioxide.xdi",
+    "used_sha256": "e4d10395c858d41f56a1cddb173745fe71ca45405d532bd8e9cf603894db6603"
+   },
+   "status": "error",
+   "error": "XAFSError: [S3] 归一化失败：边后平台 = 2.271（阈值 0.85–1.15）。稀释样品的低 Z 基体呈 E^-3 衰减，直线外推扣不掉，此时 FT 峰位与幅度均不可引用"
+  },
+  {
+   "standard": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+   "standard_exists": true,
+   "motif": "ceo2_fluorite_cod_1562989",
+   "motif_file": null,
+   "strict": true,
+   "kmin": null,
+   "kmax": null,
+   "rmin": 1.5,
+   "e0_method": "derivative",
+   "manual_e0": null,
+   "fit_shells": 1,
+   "note": "IIT-Lytle RAW Ce/ceo2.004 CeO2 L3 透射谱（在 Ce L2 6164 eV 前截断于 <=6160 eV，327 点）；rmin=1.5 完整覆盖 8×Ce–O 第一壳，平台 1.0645，通过全部严格门禁",
+   "provenance": {
+    "source_path": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+    "source_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305",
+    "committed": false,
+    "transform": null,
+    "used_path": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+    "used_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305"
+   },
+   "result": {
+    "absorber": "Ce",
+    "edge": "L3",
+    "motif": "ceo2_fluorite_cod_1562989",
+    "motif_file": null,
+    "fixed_CN": 8.0,
+    "R_first": 2.3414,
+    "n_shells": 1,
+    "shell_paths": [
+     {
+      "label": "Ce-O@2.34",
+      "scatterer": "O",
+      "reff": 2.3414,
+      "degen": 8.0
+     }
+    ],
+    "e0_method": "derivative",
+    "e0": 5728.0,
+    "k_window": [
+     3.0,
+     12.0
+    ],
+    "protocol": "production_equivalent: 1-shell, N fixed to crystallographic degeneracy, vary s02 + (dR, sigma2) per path + dE0; kw=2; robustness x3",
+    "runs": [
+     {
+      "r_window": [
+       1.5,
+       2.461
+      ],
+      "s02": 0.6267,
+      "s02_err": 0.0206,
+      "rf": 0.0123,
+      "delta_e0": 6.09,
+      "sigma2": 0.0077,
+      "delta_r": -0.03,
+      "sigma2_at_bound": false,
+      "paths": [
+       {
+        "label": "Ce-O@2.34",
+        "degen": 8.0,
+        "sigma2": 0.0077,
+        "delta_r": -0.03,
+        "sigma2_at_bound": false
+       }
+      ],
+      "interior": true
+     },
+     {
+      "r_window": [
+       1.5,
+       2.521
+      ],
+      "s02": 0.6279,
+      "s02_err": 0.0235,
+      "rf": 0.0169,
+      "delta_e0": 6.01,
+      "sigma2": 0.0077,
+      "delta_r": -0.03,
+      "sigma2_at_bound": false,
+      "paths": [
+       {
+        "label": "Ce-O@2.34",
+        "degen": 8.0,
+        "sigma2": 0.0077,
+        "delta_r": -0.03,
+        "sigma2_at_bound": false
+       }
+      ],
+      "interior": true
+     },
+     {
+      "r_window": [
+       1.5,
+       2.601
+      ],
+      "s02": 0.6363,
+      "s02_err": 0.0268,
+      "rf": 0.0223,
+      "delta_e0": 5.94,
+      "sigma2": 0.0079,
+      "delta_r": -0.03,
+      "sigma2_at_bound": false,
+      "paths": [
+       {
+        "label": "Ce-O@2.34",
+        "degen": 8.0,
+        "sigma2": 0.0079,
+        "delta_r": -0.03,
+        "sigma2_at_bound": false
+       }
+      ],
+      "interior": true
+     }
+    ],
+    "s02": 0.6279,
+    "s02_err": 0.0268,
+    "rf": 0.0223,
+    "spread": 0.0096,
+    "delta_e0": 5.94,
+    "sigma2": 0.0079,
+    "n_variables": 4,
+    "n_independent": 5.85,
+    "plateau": 1.0645,
+    "rbkg_choice": 0.7999999999999999,
+    "kw_sensitivity": {
+     "1": {
+      "s02": 0.6292,
+      "rf": 0.0043,
+      "delta_e0": 6.0
+     },
+     "3": {
+      "s02": 0.682,
+      "rf": 0.0581,
+      "delta_e0": 5.88
+     }
+    },
+    "checks": {
+     "window_runs_interior": true,
+     "s02_in_range": true,
+     "s02_err_ok": true,
+     "window_spread_ok": true,
+     "sigma2_not_at_bound": true
+    },
+    "pass": true
+   },
+   "status": "passed"
+  }
+ ],
+ "s02": 0.6279,
+ "s02_err": 0.0268,
+ "rf": 0.0223,
+ "spread": 0.0096,
+ "delta_e0": 5.94,
+ "sigma2": 0.0079,
+ "plateau": 1.0645,
+ "k_window": [
+  3.0,
+  12.0
+ ],
+ "fixed_CN": 8.0,
+ "R_first": 2.3414,
+ "runs": [
+  {
+   "r_window": [
+    1.5,
+    2.461
+   ],
+   "s02": 0.6267,
+   "s02_err": 0.0206,
+   "rf": 0.0123,
+   "delta_e0": 6.09,
+   "sigma2": 0.0077,
+   "delta_r": -0.03,
+   "sigma2_at_bound": false,
+   "paths": [
+    {
+     "label": "Ce-O@2.34",
+     "degen": 8.0,
+     "sigma2": 0.0077,
+     "delta_r": -0.03,
+     "sigma2_at_bound": false
+    }
+   ],
+   "interior": true
+  },
+  {
+   "r_window": [
+    1.5,
+    2.521
+   ],
+   "s02": 0.6279,
+   "s02_err": 0.0235,
+   "rf": 0.0169,
+   "delta_e0": 6.01,
+   "sigma2": 0.0077,
+   "delta_r": -0.03,
+   "sigma2_at_bound": false,
+   "paths": [
+    {
+     "label": "Ce-O@2.34",
+     "degen": 8.0,
+     "sigma2": 0.0077,
+     "delta_r": -0.03,
+     "sigma2_at_bound": false
+    }
+   ],
+   "interior": true
+  },
+  {
+   "r_window": [
+    1.5,
+    2.601
+   ],
+   "s02": 0.6363,
+   "s02_err": 0.0268,
+   "rf": 0.0223,
+   "delta_e0": 5.94,
+   "sigma2": 0.0079,
+   "delta_r": -0.03,
+   "sigma2_at_bound": false,
+   "paths": [
+    {
+     "label": "Ce-O@2.34",
+     "degen": 8.0,
+     "sigma2": 0.0079,
+     "delta_r": -0.03,
+     "sigma2_at_bound": false
+    }
+   ],
+   "interior": true
+  }
+ ],
+ "checks": {
+  "window_runs_interior": true,
+  "s02_in_range": true,
+  "s02_err_ok": true,
+  "window_spread_ok": true,
+  "sigma2_not_at_bound": true
+ },
+ "kw_sensitivity": {
+  "1": {
+   "s02": 0.6292,
+   "rf": 0.0043,
+   "delta_e0": 6.0
+  },
+  "3": {
+   "s02": 0.682,
+   "rf": 0.0581,
+   "delta_e0": 5.88
+  }
+ },
+ "n_variables": 4,
+ "n_independent": 5.85,
+ "n_shells": 1,
+ "shell_paths": [
+  {
+   "label": "Ce-O@2.34",
+   "scatterer": "O",
+   "reff": 2.3414,
+   "degen": 8.0
+  }
+ ],
+ "e0": 5728.0,
+ "e0_method": "derivative",
+ "motif": "ceo2_fluorite_cod_1562989",
+ "edge": "L3",
+ "provenance": {
+  "source_path": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+  "source_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305",
+  "committed": false,
+  "transform": null,
+  "used_path": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+  "used_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305"
+ },
+ "standard": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+ "standard_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305",
+ "motif_file": null,
+ "motif_file_sha256": null,
+ "result": {
+  "absorber": "Ce",
+  "edge": "L3",
+  "motif": "ceo2_fluorite_cod_1562989",
+  "motif_file": null,
+  "fixed_CN": 8.0,
+  "R_first": 2.3414,
+  "n_shells": 1,
+  "shell_paths": [
+   {
+    "label": "Ce-O@2.34",
+    "scatterer": "O",
+    "reff": 2.3414,
+    "degen": 8.0
+   }
+  ],
+  "e0_method": "derivative",
+  "e0": 5728.0,
+  "k_window": [
+   3.0,
+   12.0
+  ],
+  "protocol": "production_equivalent: 1-shell, N fixed to crystallographic degeneracy, vary s02 + (dR, sigma2) per path + dE0; kw=2; robustness x3",
+  "runs": [
+   {
+    "r_window": [
+     1.5,
+     2.461
+    ],
+    "s02": 0.6267,
+    "s02_err": 0.0206,
+    "rf": 0.0123,
+    "delta_e0": 6.09,
+    "sigma2": 0.0077,
+    "delta_r": -0.03,
+    "sigma2_at_bound": false,
+    "paths": [
+     {
+      "label": "Ce-O@2.34",
+      "degen": 8.0,
+      "sigma2": 0.0077,
+      "delta_r": -0.03,
+      "sigma2_at_bound": false
+     }
+    ],
+    "interior": true
+   },
+   {
+    "r_window": [
+     1.5,
+     2.521
+    ],
+    "s02": 0.6279,
+    "s02_err": 0.0235,
+    "rf": 0.0169,
+    "delta_e0": 6.01,
+    "sigma2": 0.0077,
+    "delta_r": -0.03,
+    "sigma2_at_bound": false,
+    "paths": [
+     {
+      "label": "Ce-O@2.34",
+      "degen": 8.0,
+      "sigma2": 0.0077,
+      "delta_r": -0.03,
+      "sigma2_at_bound": false
+     }
+    ],
+    "interior": true
+   },
+   {
+    "r_window": [
+     1.5,
+     2.601
+    ],
+    "s02": 0.6363,
+    "s02_err": 0.0268,
+    "rf": 0.0223,
+    "delta_e0": 5.94,
+    "sigma2": 0.0079,
+    "delta_r": -0.03,
+    "sigma2_at_bound": false,
+    "paths": [
+     {
+      "label": "Ce-O@2.34",
+      "degen": 8.0,
+      "sigma2": 0.0079,
+      "delta_r": -0.03,
+      "sigma2_at_bound": false
+     }
+    ],
+    "interior": true
+   }
+  ],
+  "s02": 0.6279,
+  "s02_err": 0.0268,
+  "rf": 0.0223,
+  "spread": 0.0096,
+  "delta_e0": 5.94,
+  "sigma2": 0.0079,
+  "n_variables": 4,
+  "n_independent": 5.85,
+  "plateau": 1.0645,
+  "rbkg_choice": 0.7999999999999999,
+  "kw_sensitivity": {
+   "1": {
+    "s02": 0.6292,
+    "rf": 0.0043,
+    "delta_e0": 6.0
+   },
+   "3": {
+    "s02": 0.682,
+    "rf": 0.0581,
+    "delta_e0": 5.88
+   }
+  },
+  "checks": {
+   "window_runs_interior": true,
+   "s02_in_range": true,
+   "s02_err_ok": true,
+   "window_spread_ok": true,
+   "sigma2_not_at_bound": true
+  },
+  "pass": true,
+  "provenance": {
+   "source_path": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+   "source_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305",
+   "committed": false,
+   "transform": null,
+   "used_path": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+   "used_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305"
+  },
+  "standard": "_standards_lib\\Ce\\Ce_metal_foil.dat",
+  "standard_sha256": "539bf6eb66061cbbf01551ff4b7c0eabe16fedba68e61495be622d9de0e09305",
+  "motif_file_sha256": null,
+  "static_absorber_py_unchanged": true
+ }
+}
