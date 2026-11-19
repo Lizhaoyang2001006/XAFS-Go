@@ -26,7 +26,7 @@ import data_audit
 import larch_wt
 import xafs_io
 from absorber import default_fluorescence_line, get_absorber
-from xafs_core import K2, PipelineResult, XAFSDataError, XAFSError
+from xafs_core import K2, NormalizedScan, PipelineResult, XAFSDataError, XAFSError
 
 
 def configure_console():
@@ -44,40 +44,41 @@ def configure_console():
                 pass
 
 
-def process_sample(paths, align: bool = False, absorber: str | None = None,
-                   edge_energy: float | None = None,
-                   e0_method: str = "derivative", manual_e0: float | None = None,
-                   rbkg: float | None = None, kmin: float = 3.0,
-                   kmax: float = 12.0, kweight: int = 2,
-                   post_window=(150, 600), wt_sigma: float = 1.5,
-                   strict: bool = True,
-                   despike: bool = False,
-                   deglitch: list[tuple[float, float]] | None = None,
-                   deadtime: bool = False,
-                   reject_outlier_scans: bool = False,
-                   mback: bool = False,
-                   chi_std=None, chi_std_k=None,
-                   clamp_lo: float | None = None,
-                   clamp_hi: float | None = None,
-                   self_absorption_formula: str | None = None,
-                   self_absorption_thickness: float | None = None,
-                   self_absorption_density: float | None = None,
-                   self_absorption_angles: tuple = (45.0, 45.0),
-                   self_absorption_line: str | None = None,
-                   verbose: bool = True) -> PipelineResult:
-    """跑完 S1–S6（算法元素无关）。absorber 只做三件配置事：
-    对齐查参考边能量、S2 定边搜索窗口、记入 res.absorber_symbol 传给拟合链。"""
+def _prepare_s1_to_s3(
+    paths,
+    *,
+    align: bool = False,
+    absorber: str | None = None,
+    edge_energy: float | None = None,
+    e0_method: str = "derivative",
+    manual_e0: float | None = None,
+    post_window=(150, 600),
+    strict: bool = True,
+    despike: bool = False,
+    deglitch: list[tuple[float, float]] | None = None,
+    deadtime: bool = False,
+    reject_outlier_scans: bool = False,
+    mback: bool = False,
+    prj_group: str | None = None,
+    apply_eshift: bool = False,
+    adapt_short_post_window: bool = False,
+    verbose: bool = True,
+):
+    """S1 解析 → S1.2 死时间/deglitch/去毛刺 → S1.5 对齐合并 → S2 E0 → S3 归一化。"""
     configure_console()
     paths = [str(p) for p in paths]
     abs_cfg = get_absorber(absorber) if absorber else None
 
     # ---- S1 解析 ----
-    scans = xafs_io.read_scans(paths)
+    scans = xafs_io.read_scans(
+        paths, prj_group=prj_group, apply_eshift=apply_eshift)
     for scan in scans:
         xafs_io.capture_measurement_identity(scan)
     if verbose:
         for scan, path in zip(scans, paths):
-            print(f"  [S1] {Path(path).name:<28} "
+            fpath, grp = xafs_io.split_scan_spec(path)
+            disp = f"{fpath.name}::{grp}" if grp else fpath.name
+            print(f"  [S1] {disp:<28} "
                   f"{scan.meta['format_detected']:<6} "
                   f"mode={scan.meta['mode']:<6} n={len(scan):<5} "
                   f"E={scan.energy.min():.0f}-{scan.energy.max():.0f}")
@@ -106,7 +107,6 @@ def process_sample(paths, align: bool = False, absorber: str | None = None,
     if deadtime:
         corrected = []
         for scan in scans:
-            before = scan.meta.get("deadtime_corrected")
             scan = athena.apply_deadtime_correction(scan)
             corrected.append(scan)
             if verbose:
@@ -167,8 +167,9 @@ def process_sample(paths, align: bool = False, absorber: str | None = None,
               f"{info.get('rejected_indices')}")
 
     # ---- S2 E0 ----
+    guess_e0 = abs_cfg.e0_edge if abs_cfg else edge_energy
     e0_info = athena.determine_e0(merged, method=e0_method, manual_e0=manual_e0,
-                                  guess=abs_cfg.e0_edge if abs_cfg else None)
+                                  guess=guess_e0)
     if verbose:
         print(f"  [S2] E0 = {e0_info['e0_sample']:.2f} eV ({e0_info['e0_method']})"
               + (f"   参考 {(e0_info.get('e0_reference') or float('nan')):.2f} eV"
@@ -177,16 +178,25 @@ def process_sample(paths, align: bool = False, absorber: str | None = None,
             print(f"       ⚠ {e0_info['reference_warning']}")
 
     # ---- S3 归一化 ----
+    eff_post_window = post_window
+    if adapt_short_post_window:
+        post_span = float(np.max(merged.energy)) - float(e0_info["e0_sample"])
+        if post_span < float(post_window[0]) + 10.0 and post_span >= 45.0:
+            eff_post_window = (
+                max(25.0, min(float(post_window[0]), 0.45 * post_span)),
+                max(40.0, min(float(post_window[1]), 0.95 * post_span)),
+            )
+
     edge_kind = (abs_cfg.edge if abs_cfg is not None else "K")
     if mback:
         if abs_cfg is None:
             raise XAFSError("S3", "MBACK 归一化需要 --absorber（理论截面按元素查表）")
         norm = athena.normalize_mback(merged, e0_info["e0_sample"],
                                       elem=abs_cfg.symbol, edge=edge_kind,
-                                      post_window=post_window)
+                                      post_window=eff_post_window)
     else:
         norm = athena.normalize_absorption(merged, e0_info["e0_sample"],
-                                           post_window=post_window)
+                                           post_window=eff_post_window)
     xanes_features = athena.extract_xanes_features(
         norm, edge=edge_kind, absorber=(abs_cfg.symbol if abs_cfg else None))
     if verbose:
@@ -196,7 +206,8 @@ def process_sample(paths, align: bool = False, absorber: str | None = None,
             print(f"       XANES 颈部肩峰 {xanes_features['neck_shoulder_energy']:.1f} eV"
                   f"（导数双峰间距 {xanes_features['derivative_split_eV']:.1f} eV"
                   + ("，E0 跳变风险" if xanes_features["e0_jump_risk"] else "") + "）")
-    if not (0.85 <= norm.plateau <= 1.15):
+    if (not adapt_short_post_window or np.isfinite(norm.plateau)) and not (
+            0.85 <= norm.plateau <= 1.15):
         msg = (f"边后平台 = {norm.plateau:.3f}（阈值 0.85–1.15）。"
                f"稀释样品的低 Z 基体呈 E^-3 衰减，直线外推扣不掉，"
                f"此时 FT 峰位与幅度均不可引用")
@@ -208,6 +219,68 @@ def process_sample(paths, align: bool = False, absorber: str | None = None,
                       "（如为已知厚样/稀释标样，可加 --no-strict 降级为警告）")
         if verbose:
             print(f"       ⚠ {msg}（strict=False，仅警告）")
+    return abs_cfg, scans, merged, e0_info, norm, xanes_features
+
+
+def process_xanes_scan(
+    paths,
+    *,
+    absorber: str | None = None,
+    edge_energy: float | None = None,
+    e0_method: str = "derivative",
+    manual_e0: float | None = None,
+    post_window=(150, 600),
+    despike: bool = False,
+    deglitch: list[tuple[float, float]] | None = None,
+    deadtime: bool = False,
+    mback: bool = False,
+    prj_group: str | None = None,
+    apply_eshift: bool = False,
+) -> NormalizedScan:
+    """只跑 S1–S3 返回 NormalizedScan（供短扫描 XANES LCF 端元复用，不进 EXAFS/WT）。"""
+    _, _, _, _, norm, _ = _prepare_s1_to_s3(
+        paths, align=False, absorber=absorber, edge_energy=edge_energy,
+        e0_method=e0_method, manual_e0=manual_e0, post_window=post_window,
+        strict=False, despike=despike, deglitch=deglitch, deadtime=deadtime,
+        reject_outlier_scans=False, mback=mback, prj_group=prj_group,
+        apply_eshift=apply_eshift, adapt_short_post_window=True, verbose=False,
+    )
+    return norm
+
+
+def process_sample(paths, align: bool = False, absorber: str | None = None,
+                   edge_energy: float | None = None,
+                   e0_method: str = "derivative", manual_e0: float | None = None,
+                   rbkg: float | None = None, kmin: float = 3.0,
+                   kmax: float = 12.0, kweight: int = 2,
+                   post_window=(150, 600), wt_sigma: float = 1.5,
+                   strict: bool = True,
+                   despike: bool = False,
+                   deglitch: list[tuple[float, float]] | None = None,
+                   deadtime: bool = False,
+                   reject_outlier_scans: bool = False,
+                   mback: bool = False,
+                   chi_std=None, chi_std_k=None,
+                   clamp_lo: float | None = None,
+                   clamp_hi: float | None = None,
+                   self_absorption_formula: str | None = None,
+                   self_absorption_thickness: float | None = None,
+                   self_absorption_density: float | None = None,
+                   self_absorption_angles: tuple = (45.0, 45.0),
+                   self_absorption_line: str | None = None,
+                   prj_group: str | None = None,
+                   apply_eshift: bool = False,
+                   verbose: bool = True) -> PipelineResult:
+    """跑完 S1–S6（算法元素无关）。absorber 只做三件配置事：
+    对齐查参考边能量、S2 定边搜索窗口、记入 res.absorber_symbol 传给拟合链。"""
+    abs_cfg, scans, merged, e0_info, norm, xanes_features = _prepare_s1_to_s3(
+        paths, align=align, absorber=absorber, edge_energy=edge_energy,
+        e0_method=e0_method, manual_e0=manual_e0, post_window=post_window,
+        strict=strict, despike=despike, deglitch=deglitch, deadtime=deadtime,
+        reject_outlier_scans=reject_outlier_scans, mback=mback,
+        prj_group=prj_group, apply_eshift=apply_eshift,
+        adapt_short_post_window=False, verbose=verbose,
+    )
 
     # ---- S4 Rbkg ----
     if rbkg is None:
@@ -284,7 +357,7 @@ def process_sample(paths, align: bool = False, absorber: str | None = None,
         sa_info["xanes_corrected"] = True
         norm = norm_xanes
         xanes_features = athena.extract_xanes_features(
-            norm, edge=edge_kind,
+            norm, edge=(abs_cfg.edge if abs_cfg is not None else "K"),
             absorber=(abs_cfg.symbol if abs_cfg else None))
         if verbose:
             med_cf = sa_info.get("correction_factor_median")

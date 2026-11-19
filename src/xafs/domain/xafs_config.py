@@ -68,6 +68,8 @@ DEFAULTS: dict[str, Any] = {
     "deglitch": None,
     "deadtime": False,
     "reject_outlier_scans": False,
+    "prj_group": None,
+    "apply_eshift": False,
     "fit_kweights": None,
     "include_ms": False,
     "vary_c3": None,

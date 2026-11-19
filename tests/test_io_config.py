@@ -977,3 +977,50 @@ class IOConfigTests(Fixtures):
             self.assertTrue(bool(s_sh.meta["eshift_applied"]))
             self.assertNotIn("eshift_unapplied_warning", s_sh.meta)
             self.assertAlmostEqual(float(s_sh.energy[0] - s_raw.energy[0]), -0.535, places=4)
+
+    def test_direct_prj_spec_eshift_hash_and_mode_identity(self):
+        from types import SimpleNamespace
+        import numpy as np
+        import cn_table
+
+        prj = ROOT / "data" / "练手数据" / "02_Fe_standards" / "Fe_standards.prj"
+        spec = f"{prj}::Fe_lepidocrocite.100"
+        sc_spec = xafs_io.read_scan(spec)
+        sc_kw = xafs_io.read_scan(prj, prj_group="Fe_lepidocrocite.100")
+        sc_sh = xafs_io.read_scan(spec, apply_eshift=True)
+
+        self.assertEqual(len(sc_spec), len(sc_kw))
+        self.assertEqual(sc_spec.meta.get("prj_group"), "Fe_lepidocrocite.100")
+        self.assertEqual(sc_spec.meta.get("mode"), "trans")
+        self.assertTrue(np.allclose(sc_kw.mu, sc_spec.mu))
+        self.assertAlmostEqual(float(sc_sh.energy[0] - sc_spec.energy[0]), -0.535, places=4)
+        self.assertEqual(
+            xafs_io.scan_spec_label(spec),
+            "Fe_lepidocrocite.100",
+        )
+        self.assertEqual(xafs_io.scan_spec_label(prj), "Fe_standards")
+        stem = xafs_io.scan_spec_stem(spec)
+        self.assertEqual(stem, "Fe_standards__Fe_lepidocrocite.100")
+        self.assertEqual(cn_table.data_sha256([spec]), cn_table.data_sha256([prj]))
+
+        self.assertIs(xafs_io.measurement_identity(sc_spec)[0], False)
+        self.assertEqual(
+            xafs_io.measurement_identity(SimpleNamespace(meta={"mode": "fluo"})),
+            (True, "mode=fluo"),
+        )
+        self.assertEqual(
+            xafs_io.measurement_identity(SimpleNamespace(meta={"mode": "fluor"})),
+            (True, "mode=fluor"),
+        )
+        self.assertIn("prj_group", xafs_config.DEFAULTS)
+        self.assertIn("apply_eshift", xafs_config.DEFAULTS)
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg_p = Path(tmp) / "prj_cfg.json"
+            cfg_p.write_text(
+                '{"prj_group": "Fe_lepidocrocite.100", "apply_eshift": true}',
+                encoding="utf-8",
+            )
+            loaded = xafs_config.load_config(cfg_p)
+            self.assertNotIn("_unknown_keys", loaded)
+            self.assertEqual(loaded["prj_group"], "Fe_lepidocrocite.100")
+            self.assertIs(loaded["apply_eshift"], True)

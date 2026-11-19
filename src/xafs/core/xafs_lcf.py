@@ -534,11 +534,15 @@ def mcr_als(spectra: list, n_components: int, max_iter: int = 200,
 # 4. 直接从 NormalizedScan / ChiK 做 LCF
 # ================================================================
 
-def _scan_xy(scan, mode: str):
+def _scan_xy(scan, mode: str, energy_scale: str = "relative_e0"):
     if mode == "xanes":
+        if energy_scale not in ("relative_e0", "absolute"):
+            raise XAFSConfigError(
+                "LCF", f"未知 energy_scale={energy_scale!r}（relative_e0 / absolute）")
         if not hasattr(scan, "energy") or not hasattr(scan, "e0"):
             raise XAFSConfigError("LCF", "XANES 模式需要 NormalizedScan")
-        x = np.asarray(scan.energy, dtype=float) - float(scan.e0)
+        e_arr = np.asarray(scan.energy, dtype=float)
+        x = e_arr if energy_scale == "absolute" else (e_arr - float(scan.e0))
         y = (np.asarray(scan.flattened, dtype=float)
              if getattr(scan, "flattened", None) is not None
              else np.asarray(scan.mu_norm, dtype=float))
@@ -554,33 +558,40 @@ def _scan_xy(scan, mode: str):
 def lcf_from_scans(target, standards: dict, mode: str = "xanes",
                    xmin: float | None = None, xmax: float | None = None,
                    sum_to_one: bool = True,
-                   allow_energy_shift: bool = False) -> dict:
+                   allow_energy_shift: bool = False,
+                   energy_scale: str = "relative_e0") -> dict:
     """从 ``NormalizedScan``（XANES）或 ``ChiK``（EXAFS）直接做 LCF。
 
-    XANES 默认区间为相对 E0 的 [−20, +60] eV；EXAFS 默认 [3,12] Å⁻¹。
+    ``energy_scale="absolute"`` 在共同绝对光子能量轴上保留化学态边移；
+    ``"relative_e0"`` 各自减去自身 ``e0``（默认保持历史兼容）。
     """
-    tx, ty = _scan_xy(target, mode)
-    std_xy = {name: _scan_xy(scan, mode)
+    tx, ty = _scan_xy(target, mode, energy_scale=energy_scale)
+    std_xy = {name: _scan_xy(scan, mode, energy_scale=energy_scale)
               for name, scan in standards.items()}
     if xmin is None:
-        xmin = -20.0 if mode == "xanes" else 3.0
+        xmin = ((float(target.e0) - 20.0) if (mode == "xanes" and energy_scale == "absolute")
+                else (-20.0 if mode == "xanes" else 3.0))
     if xmax is None:
-        xmax = 60.0 if mode == "xanes" else 12.0
-    return run_lcf(tx, ty, std_xy, float(xmin), float(xmax),
-                   sum_to_one=sum_to_one,
-                   allow_energy_shift=allow_energy_shift)
+        xmax = ((float(target.e0) + 60.0) if (mode == "xanes" and energy_scale == "absolute")
+                else (60.0 if mode == "xanes" else 12.0))
+    out = run_lcf(tx, ty, std_xy, float(xmin), float(xmax),
+                  sum_to_one=sum_to_one,
+                  allow_energy_shift=allow_energy_shift)
+    out["energy_scale"] = energy_scale
+    return out
 
 
 def lcf_summary(result: dict) -> dict:
     """把 run_lcf 结果压成可落盘/报告的摘要（不写整条谱）。"""
     best = result.get("best") or {}
-    return {
+    out = {
         "weights": best.get("weights"),
         "weight_err": best.get("weight_err"),
         "r_factor": best.get("r_factor"),
         "components": best.get("names"),
         "n_components": len(best.get("names") or []),
         "identifiable": best.get("identifiable"),
+        "energy_scale": result.get("energy_scale"),
         "x_range": result.get("x_range"),
         "sum_to_one": result.get("sum_to_one"),
         "combinations": [
@@ -593,13 +604,35 @@ def lcf_summary(result: dict) -> dict:
             for c in (result.get("combinations") or [])
         ],
     }
+    if result.get("alignment_check") is not None:
+        out["alignment_check"] = result["alignment_check"]
+        out["alignment_warning"] = result.get("alignment_warning")
+    return out
 
 
 # ================================================================
 # 4.5 原位（Operando）时间序列一键解谱（B15-1）
 # ================================================================
 
-def _operando_item(item, idx: int, mode: str):
+def _is_scan_item(item) -> bool:
+    if hasattr(item, "norm") or (hasattr(item, "energy") and hasattr(item, "e0")):
+        return True
+    if isinstance(item, (tuple, list)) and len(item) == 2:
+        p = item[1]
+        return hasattr(p, "norm") or (hasattr(p, "energy") and hasattr(p, "e0"))
+    return False
+
+
+def _item_e0(item) -> float | None:
+    p = item[1] if (isinstance(item, (tuple, list)) and len(item) == 2) else item
+    if hasattr(p, "norm") and hasattr(p.norm, "e0"):
+        return float(p.norm.e0)
+    if hasattr(p, "e0"):
+        return float(p.e0)
+    return None
+
+
+def _operando_item(item, idx: int, mode: str, energy_scale: str = "relative_e0"):
     """归一化一条原位谱 → (name, x, y, payload)。
 
     payload 用于描述符轨迹：PipelineResult / NormalizedScan 保留对象，
@@ -609,10 +642,10 @@ def _operando_item(item, idx: int, mode: str):
         if len(item) == 2:
             name, payload = item[0], item[1]
             if hasattr(payload, "norm"):
-                x, y = _scan_xy(payload.norm, mode)
+                x, y = _scan_xy(payload.norm, mode, energy_scale=energy_scale)
                 return str(name), x, y, payload
             if hasattr(payload, "energy") and hasattr(payload, "e0"):
-                x, y = _scan_xy(payload, mode)
+                x, y = _scan_xy(payload, mode, energy_scale=energy_scale)
                 return str(name), x, y, payload
             if (isinstance(payload, (tuple, list))
                     and len(payload) == 2):
@@ -625,10 +658,10 @@ def _operando_item(item, idx: int, mode: str):
             return (str(item[0]), np.asarray(item[1], dtype=float),
                     np.asarray(item[2], dtype=float), None)
     if hasattr(item, "norm"):
-        x, y = _scan_xy(item.norm, mode)
+        x, y = _scan_xy(item.norm, mode, energy_scale=energy_scale)
         return f"scan_{idx:02d}", x, y, item
     if hasattr(item, "energy") and hasattr(item, "e0"):
-        x, y = _scan_xy(item, mode)
+        x, y = _scan_xy(item, mode, energy_scale=energy_scale)
         return f"scan_{idx:02d}", x, y, item
     raise XAFSConfigError(
         "OPERANDO", f"第 {idx} 项既不是 (name, NormalizedScan)、"
@@ -665,14 +698,15 @@ def _operando_descriptor(name: str, payload) -> dict:
     return out
 
 
-def _operando_standard_xy(standards: dict | None, mode: str) -> dict:
+def _operando_standard_xy(standards: dict | None, mode: str,
+                          energy_scale: str = "relative_e0") -> dict:
     """候选标样 → {name: (x, y)}；支持 NormalizedScan / PipelineResult / 数组。"""
     out = {}
     for name, val in (standards or {}).items():
         if hasattr(val, "norm"):
-            out[str(name)] = _scan_xy(val.norm, mode)
+            out[str(name)] = _scan_xy(val.norm, mode, energy_scale=energy_scale)
         elif hasattr(val, "energy") and hasattr(val, "e0"):
-            out[str(name)] = _scan_xy(val, mode)
+            out[str(name)] = _scan_xy(val, mode, energy_scale=energy_scale)
         elif isinstance(val, (tuple, list)) and len(val) == 2:
             out[str(name)] = (np.asarray(val[0], dtype=float),
                               np.asarray(val[1], dtype=float))
@@ -688,12 +722,13 @@ def run_operando_series(
     standards: dict | None = None,
     n_components: int | None = None,
     mode: str = "xanes",
-    xmin: float = -20.0,
-    xmax: float = 60.0,
+    xmin: float | None = None,
+    xmax: float | None = None,
     closure: bool = True,
     max_iter: int = 800,
     spoil_good: float = 3.0,
     spoil_poor: float = 6.0,
+    energy_scale: str = "auto",
 ) -> dict:
     """B15-1 原位时间序列一键解谱（PCA → SPOIL → LCF → MCR-ALS）。
 
@@ -722,14 +757,43 @@ def run_operando_series(
     ----
     ``{"names", "n_components", "pca", "target_transform",
        "accepted_standards", "rejected_standards", "lcf_series",
-       "lcf_weights", "mcr_als", "descriptors", "warnings", "mode"}``
+       "lcf_weights", "mcr_als", "descriptors", "warnings", "mode", "energy_scale"}``
     """
     if items is None or len(items) < 3:
         raise XAFSConfigError(
             "OPERANDO", f"原位序列至少需要 3 条谱，收到 {0 if items is None else len(items)}")
     if mode not in ("xanes", "exafs"):
         raise XAFSConfigError("OPERANDO", f"未知 mode={mode!r}")
-    prepared = [_operando_item(item, i, mode) for i, item in enumerate(items)]
+    if energy_scale == "auto":
+        all_scans = all(_is_scan_item(it) for it in items) and all(
+            hasattr(v, "norm") or (hasattr(v, "energy") and hasattr(v, "e0"))
+            for v in (standards or {}).values()
+        )
+        if mode == "xanes" and all_scans and (xmin is None or float(xmin) > 100.0):
+            eff_scale = "absolute"
+        else:
+            eff_scale = "relative_e0"
+    elif energy_scale in ("absolute", "relative_e0"):
+        eff_scale = energy_scale
+    else:
+        raise XAFSConfigError(
+            "OPERANDO", f"未知 energy_scale={energy_scale!r}（auto / absolute / relative_e0）")
+
+    if xmin is None or xmax is None:
+        if eff_scale == "absolute" and mode == "xanes":
+            e0s = [e for e in (_item_e0(it) for it in items)
+                   if e is not None and np.isfinite(e)]
+            e0_med = float(np.median(e0s)) if e0s else 0.0
+            xmin = float(e0_med - 20.0) if xmin is None else float(xmin)
+            xmax = float(e0_med + 60.0) if xmax is None else float(xmax)
+        else:
+            xmin = (-20.0 if mode == "xanes" else 3.0) if xmin is None else float(xmin)
+            xmax = (60.0 if mode == "xanes" else 12.0) if xmax is None else float(xmax)
+    else:
+        xmin, xmax = float(xmin), float(xmax)
+
+    prepared = [_operando_item(item, i, mode, energy_scale=eff_scale)
+                for i, item in enumerate(items)]
     spectra = [(name, x, y) for name, x, y, _ in prepared]
     names = [name for name, _, _, _ in prepared]
 
@@ -743,7 +807,7 @@ def run_operando_series(
             "OPERANDO", f"n_components={k} 必须在 1–{len(items) - 1}")
     k = min(k, len(pca["components"][0]))
 
-    std_xy = _operando_standard_xy(standards, mode)
+    std_xy = _operando_standard_xy(standards, mode, energy_scale=eff_scale)
     warnings: list[str] = []
     tt_out = {}
     accepted: list[str] = []
@@ -825,6 +889,7 @@ def run_operando_series(
         "descriptors": descriptors,
         "warnings": warnings,
         "mode": mode,
+        "energy_scale": eff_scale,
         "x_range": (float(xmin), float(xmax)),
     }
 

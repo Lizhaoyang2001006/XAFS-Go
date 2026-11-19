@@ -62,6 +62,8 @@ PARAM_META: dict[str, dict[str, Any]] = {
     "deadtime": {"unit": "", "stage": "S1", "formal": False},
     "deglitch": {"unit": "eV", "stage": "S1", "formal": False},
     "despike": {"unit": "", "stage": "S1", "formal": False},
+    "prj_group": {"unit": "", "stage": "S1", "formal": False},
+    "apply_eshift": {"unit": "", "stage": "S1", "formal": True},
     "reject_outlier_scans": {"unit": "", "stage": "S1", "formal": False},
     "multi_element": {"unit": "", "stage": "S1", "formal": False},
     "multi_element_s02": {"unit": "", "stage": "S1", "formal": True},

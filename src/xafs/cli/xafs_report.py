@@ -118,7 +118,9 @@ def process_scans(files, absorber: str = "Fe", strict: bool = False,
                   self_absorption_line: str | None = None,
                   mback: bool = False, chi_std=None, chi_std_k=None,
                   clamp_lo: float | None = None,
-                  clamp_hi: float | None = None) -> dict:
+                  clamp_hi: float | None = None,
+                  prj_group: str | None = None,
+                  apply_eshift: bool = False) -> dict:
     """读数 → 对齐(可降级) → 合并 → E0 → 归一化 → Rbkg → χ(k) → FT → WT。
 
     编排在 xafs_pipeline.process_sample（与 run_xafs 同一条链），
@@ -144,7 +146,9 @@ def process_scans(files, absorber: str = "Fe", strict: bool = False,
         self_absorption_thickness=self_absorption_thickness,
         self_absorption_density=self_absorption_density,
         self_absorption_angles=self_absorption_angles,
-        self_absorption_line=self_absorption_line)
+        self_absorption_line=self_absorption_line,
+        prj_group=prj_group,
+        apply_eshift=apply_eshift)
     res.data_sha256 = cn_table.data_sha256(files)
     res.kmax_clamp = kmax_clamp
     return {"scans": res.scans, "merged": res.merged, "e0": res.e0["e0_sample"],
@@ -1457,6 +1461,10 @@ def main(argv=None):
                              "至少保留 2 条（默认关闭；默认均值逐位兼容）")
     parser.add_argument("--lcf-standards", default=None,
                         help="XANES LCF 端元文件（逗号分隔），输出 <stem>_lcf.json")
+    parser.add_argument("--prj-group", default=None,
+                        help="Athena .prj 多扫描组名（也可直接用 file.prj::Group 指定）")
+    parser.add_argument("--apply-eshift", action="store_true",
+                        help="读取 Athena .prj 时应用记录的 bkg_eshift 能量平移校准（默认关闭）")
     parser.add_argument("--shared-sigma2", default=None,
                         help="σ² 共享组（对标 Artemis 路径约束）：'all' 让所有路径共享一个 σ²；"
                              "或 JSON 列表如 '[[0,1],[2]]' 显式分组；默认每条路径独立 σ²")
@@ -1568,9 +1576,12 @@ def main(argv=None):
     # ---- Phase I–III 开关：CLI 显式 > 配置文件 > 默认 ----
     for _key in ("deadtime", "reject_outlier_scans", "include_ms",
                  "isotropic_deltar", "mback", "hetero_cocupancy",
-                 "phase_correct", "chi2_contour", "operando"):
+                 "phase_correct", "chi2_contour", "operando",
+                 "apply_eshift"):
         if not getattr(args, _key, False) and config.get(_key):
             setattr(args, _key, True)
+    if args.prj_group is None and config.get("prj_group") is not None:
+        args.prj_group = config["prj_group"]
     if args.deglitch is None and config.get("deglitch") is not None:
         args.deglitch = config["deglitch"]
     if args.fit_kweights is None and config.get("fit_kweights") is not None:
@@ -1772,7 +1783,7 @@ def main(argv=None):
         op_root.mkdir(parents=True, exist_ok=True)
         results = []
         for i, fpath in enumerate(args.files, 1):
-            print(f"[operando {i}/{len(args.files)}] {Path(fpath).name}")
+            print(f"[operando {i}/{len(args.files)}] {xafs_io.scan_spec_label(fpath)}")
             st = process_scans(
                 [fpath], absorber=args.absorber, strict=args.strict,
                 kmin=args.kmin, kmax=args.kmax,
@@ -1788,18 +1799,27 @@ def main(argv=None):
                 self_absorption_thickness=args.self_absorption_thickness,
                 self_absorption_density=args.self_absorption_density,
                 self_absorption_angles=sa_angles,
-                self_absorption_line=args.self_absorption_line)
+                self_absorption_line=args.self_absorption_line,
+                prj_group=args.prj_group,
+                apply_eshift=args.apply_eshift)
             results.append(st["result"])
         std_scans = None
         if lcf_standards:
             std_scans = {}
+            op_edge_e0 = float(results[0].norm.e0) if results else None
             for p in lcf_standards:
-                std = xafs_pipeline.process_sample(
-                    [p], absorber=args.absorber, strict=False,
+                std_norm = xafs_pipeline.process_xanes_scan(
+                    [p], absorber=args.absorber, edge_energy=op_edge_e0,
                     e0_method=args.e0_method, post_window=post_window,
                     mback=args.mback, despike=args.despike,
-                    deadtime=args.deadtime, verbose=False)
-                std_scans[Path(p).stem] = std.norm
+                    deadtime=args.deadtime, apply_eshift=args.apply_eshift)
+                lbl = xafs_io.scan_spec_label(p)
+                if lbl in std_scans:
+                    idx = 2
+                    while f"{lbl}_{idx}" in std_scans:
+                        idx += 1
+                    lbl = f"{lbl}_{idx}"
+                std_scans[lbl] = std_norm
         op = xafs_lcf.run_operando_series(
             results, standards=std_scans,
             **xafs_config.operando_kwargs_from_config(config))
@@ -1839,7 +1859,7 @@ def main(argv=None):
         print(f"  → {html_path}")
         return
 
-    stem = args.stem or Path(args.files[0]).stem
+    stem = args.stem or xafs_io.scan_spec_stem(args.files[0])
     sample = args.sample or stem
     out = (Path(args.outdir) if args.outdir
            else ROOT / "xafs_out" / stem)
@@ -1862,31 +1882,44 @@ def main(argv=None):
                        self_absorption_thickness=args.self_absorption_thickness,
                        self_absorption_density=args.self_absorption_density,
                        self_absorption_angles=sa_angles,
-                       self_absorption_line=args.self_absorption_line)
+                       self_absorption_line=args.self_absorption_line,
+                       prj_group=args.prj_group,
+                       apply_eshift=args.apply_eshift)
     print(f"  E0={st['e0']:.2f} eV, edge_step={st['norm'].edge_step:.4f}, "
           f"Rbkg={st['rbkg']['rbkg']:.2f}, FT 第一峰={st['r1']:.3f} Å")
+
+    eff_absorber = args.absorber or getattr(st["result"], "absorber_symbol", None)
+    if not eff_absorber and args.files:
+        import run_xafs
+        eff_absorber, _ = run_xafs.detect_absorber(
+            args.files[0], prj_group=args.prj_group)
 
     if lcf_standards:
         std_norms = {}
         for std_path in lcf_standards:
-            std_res = xafs_pipeline.process_sample(
-                [std_path], absorber=args.absorber, strict=False,
+            std_norm = xafs_pipeline.process_xanes_scan(
+                [std_path], absorber=eff_absorber,
+                edge_energy=float(st["e0"]),
                 e0_method=args.e0_method, post_window=post_window,
                 mback=args.mback, despike=args.despike,
-                deadtime=args.deadtime, verbose=False)
-            std_norms[Path(std_path).stem] = std_res.norm
-        lcf_res = xafs_lcf.lcf_from_scans(st["norm"], std_norms,
-                                          mode="xanes")
+                deadtime=args.deadtime, apply_eshift=args.apply_eshift)
+            lbl = xafs_io.scan_spec_label(std_path)
+            if lbl in std_norms:
+                idx = 2
+                while f"{lbl}_{idx}" in std_norms:
+                    idx += 1
+                lbl = f"{lbl}_{idx}"
+            std_norms[lbl] = std_norm
+        lcf_res = xafs_lcf.lcf_from_scans(
+            st["norm"], std_norms, mode="xanes", energy_scale="absolute")
+        st["result"].lcf = lcf_res
         xafs_io.write_json(out / f"{stem}_lcf.json",
                            xafs_lcf.lcf_summary(lcf_res))
         w = ", ".join(f"{k}={v:.3f}" for k, v in lcf_res["weights"].items())
         print(f"  [B2-2] XANES LCF: {w}   Rf={lcf_res['r_factor']:.2e}"
               f"  → {out / f'{stem}_lcf.json'}")
-
-    eff_absorber = args.absorber or getattr(st["result"], "absorber_symbol", None)
-    if not eff_absorber and args.files:
-        import run_xafs
-        eff_absorber, _ = run_xafs.detect_absorber(args.files[0])
+        if lcf_res.get("alignment_warning"):
+            print(f"  ⚠ [B2-2] {lcf_res['alignment_warning']}")
     _s02_is_config = bool(getattr(args, "_s02_is_config", False))
     # CLI 显式 --s02 最高优先；config 来源降到化学态/T5 之后并标 config:s02
     s02_val = args.s02 if not _s02_is_config else None
@@ -2219,6 +2252,8 @@ def main(argv=None):
     # 【P1.1/#16】只在真的裁剪时写入，未裁剪样品台账逐位一致（红线5）。
     if st["result"].kmax_clamp is not None:
         report_meta["ft"]["kmax_clamp"] = st["result"].kmax_clamp
+    if getattr(st["result"], "lcf", None):
+        report_meta["lcf"] = xafs_lcf.lcf_summary(st["result"].lcf)
     report_meta.update(xafs_provenance.build_output_meta(
         prov,
         norm=st["norm"], strict=args.strict,

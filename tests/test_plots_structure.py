@@ -449,6 +449,152 @@ class StructurePlotsUnitTests(unittest.TestCase):
         self.assertEqual(len(contribs), 1)
         self.assertIn("k_peak_th", contribs[0])
 
+    def test_l1_first_shell_live_fit_and_lcf_figure(self):
+        """L1 回退保留 FitResult 时应绘制拟合曲线、锁定 DIAGNOSTIC/HYPOTHESIS ONLY 并产出 LCF 图表。"""
+        import csv
+        import re
+        from matplotlib.axes import Axes
+
+        self.assertEqual(xafs_plot_special._scatterer_element_and_z("Pt-O", "Pt"), ("O", 8))
+        self.assertEqual(xafs_plot_special._scatterer_element_and_z("Pt-Pt_1", "Pt"), ("Pt", 78))
+
+        res = _synthetic_pipeline_result()
+        res.absorber_symbol = "Pt"
+        res.structure = {
+            "status": "no_match",
+            "ranked": [{"id": "pt_o2", "score": 0.45}],
+            "coverage_ok": False,
+            "l1_first_shell": {
+                "ligand": "O", "geometry": "oct",
+                "N": 4.2, "N_err": 0.4, "R": 2.01, "R_err": 0.02,
+                "sigma2": 0.003, "rf": 0.045, "delta_e0": 3.0,
+                "n_independent": 10.0, "n_variables": 4,
+            },
+        }
+        fit_obj = SimpleNamespace(
+            r_factor=0.045, delta_e0=3.0, delta_e0_err=1.1,
+            n_variables=4, n_independent=10.0, s02=0.80,
+            rmin=1.0, rmax=2.4, kmin=3.0, kmax=11.0, kweights=(2,),
+            paths=[SimpleNamespace(
+                label="Pt-O", r=2.01, reff=2.00,
+                degeneracy=4.2, n_err=0.4,
+                delta_r=0.01, delta_r_err=0.02,
+                sigma2=0.003, sigma2_err=0.0005, sigma2_at_bound=False,
+            )],
+            model_k_grid=res.chi_k.k,
+            model_k=0.9 * res.chi_k.chi,
+            model_r=res.ft.r,
+            model_chi_r=0.9 * res.ft.chi_r,
+            correlation=np.eye(4),
+        )
+        fit_out = {
+            "mode": "l1_first_shell",
+            "status": "no_match",
+            "cn_reliable": True,
+            "s02": 0.80,
+            "s02_source": "--s02 runtime override",
+            "l1": res.structure["l1_first_shell"],
+            "fit": fit_obj,
+            "shells": [{"label": "Pt-O", "scatterer": "O"}],
+        }
+        res.lcf = {
+            "x": np.linspace(7100.0, 7160.0, 31),
+            "y": np.linspace(0.0, 1.0, 31),
+            "y_fit": np.linspace(0.01, 0.99, 31),
+            "weights": {"Lep": 0.6, "Pyr": 0.4},
+            "weight_err": {"Lep": 0.02, "Pyr": 0.02},
+            "r_factor": 0.0012,
+            "energy_scale": "absolute",
+            "alignment_check": {
+                "recommended_shift_eV": -1.2,
+                "base_r_factor": 0.01,
+                "shifted_r_factor": 0.002,
+            },
+            "alignment_warning": "shift -1.2 eV",
+        }
+
+        texts: list[str] = []
+        orig_text = Axes.text
+
+        def _cap(self_ax, *args, **kwargs):
+            if len(args) >= 3:
+                texts.append(str(args[2]))
+            elif "s" in kwargs:
+                texts.append(str(kwargs["s"]))
+            return orig_text(self_ax, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            with patch.object(Axes, "text", new=_cap):
+                suite = xafs_plots.render_plot_suite(
+                    res, fit_out, out, "l1_lcf_test",
+                    mode="structure", sample="Pt-L1", dpi=80,
+                )
+            joined = re.sub(r"\s+", " ", "\n".join(texts))
+            self.assertIn("L1 first-shell fallback: O (oct)", joined)
+            self.assertIn("Rf = 0.0450", joined)
+            self.assertIn("DIAGNOSTIC/HYPOTHESIS ONLY (l1_diagnostic_only)", joined)
+            self.assertNotIn("PASS — quantitative CN allowed", joined)
+
+            lcf_png = out / "l1_lcf_test_xanes_lcf.png"
+            self.assertTrue(lcf_png.is_file())
+            self.assertGreater(lcf_png.stat().st_size, 1024)
+            self.assertIn(lcf_png, suite["images"])
+
+            with (out / "l1_lcf_test_summary.csv").open("r", encoding="utf-8-sig", newline="") as fh:
+                items = {row[0]: row for row in csv.reader(fh) if row}
+            self.assertIn("xanes_lcf", items)
+            self.assertIn("energy_scale=absolute", items["xanes_lcf"][3])
+
+            xlabels: list[str] = []
+            orig_xlabel = Axes.set_xlabel
+
+            def _cap_xl(self_ax, xlabel, *args, **kwargs):
+                xlabels.append(str(xlabel))
+                return orig_xlabel(self_ax, xlabel, *args, **kwargs)
+
+            op_mock = {
+                "names": ["t0", "t1", "t2"],
+                "n_components": 2,
+                "accepted_standards": [],
+                "lcf_series": [],
+                "descriptors": [{"e0": 11564.0}, {"e0": 11565.0}, {"e0": 11566.0}],
+                "mcr_als": {
+                    "concentrations": np.array([[0.8, 0.5, 0.2], [0.2, 0.5, 0.8]]),
+                    "components": np.ones((21, 2)),
+                    "x": np.linspace(11540.0, 11620.0, 21),
+                },
+                "mode": "xanes",
+                "energy_scale": "absolute",
+            }
+            with patch.object(Axes, "set_xlabel", new=_cap_xl):
+                xafs_plot_special.write_operando_diagnostics(op_mock, out / "op_abs")
+            self.assertIn("photon energy (eV)", xlabels)
+
+            import paper_figures
+
+            fit_out_paper = {**fit_out, "path_files": [str(out / "feff0001.dat")]}
+            seen_kwargs: list[dict] = []
+            orig_f2j = paper_figures.fit_result_to_json
+
+            def _wrap_f2j(*args, **kwargs):
+                seen_kwargs.append(dict(kwargs))
+                return {"fit": {"paths": []}}
+
+            with patch.object(paper_figures, "fit_result_to_json", side_effect=_wrap_f2j), \
+                 patch.object(paper_figures, "make_paper_figure",
+                              return_value={"png": str(out / "mock_paper.png")}) as mpf:
+                (out / "mock_paper.png").write_bytes(b"png")
+                xafs_plots.render_plot_suite(
+                    res, fit_out_paper, out, "l1_paper_test",
+                    mode="paper", sample="Pt-L1", dpi=80,
+                )
+            self.assertEqual(len(seen_kwargs), 1)
+            self.assertNotIn("cn_reliable", seen_kwargs[0])
+            self.assertIs(seen_kwargs[0]["diagnostic_only"], True)
+            self.assertEqual(seen_kwargs[0]["cn_status"], "l1_diagnostic_only")
+            self.assertEqual(mpf.call_args.kwargs["kmax"], 12.0)
+
 
 if __name__ == "__main__":
     unittest.main()

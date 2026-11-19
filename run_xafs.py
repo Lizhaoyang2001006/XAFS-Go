@@ -71,16 +71,51 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
+def _serialize_fit_obj(fit) -> dict:
+    """把 FitResult 序列化为 JSON-safe 摘要（供 *_fit.json）。"""
+    sf = getattr(fit, "nidp_scale_factor", None)
+    return {
+        "delta_e0": fit.delta_e0, "delta_e0_err": fit.delta_e0_err,
+        "r_factor": fit.r_factor, "n_independent": fit.n_independent,
+        "n_variables": fit.n_variables, "overfit": fit.overfit,
+        "nidp_scale_factor": sf,
+        "rmin": fit.rmin, "rmax": fit.rmax,
+        "kmin": fit.kmin, "kmax": fit.kmax, "s02": fit.s02,
+        "kweights": list(fit.kweights or ()),
+        "r_factors_by_kweight": (fit.r_factors_by_kweight or {}),
+        "epsilon_r": fit.epsilon_r,
+        "chi_square": fit.chi_square,
+        "reduced_chi_square": fit.reduced_chi_square,
+        "mixture_weights": fit.mixture_weights,
+        "parameter_names": fit.parameter_names,
+        "correlation": ([[round(float(v), 5) for v in row]
+                         for row in fit.correlation]
+                        if fit.correlation is not None else None),
+        "paths": [{"label": p.label, "reff": p.reff,
+                   "N": p.degeneracy, "N_err": p.n_err,
+                   "N_err_nidp": (None if (p.n_err is None or sf is None)
+                                  else float(p.n_err) * float(sf)),
+                   "R": p.r, "R_err": p.delta_r_err,
+                   "R_err_nidp": (None if (p.delta_r_err is None or sf is None)
+                                  else float(p.delta_r_err) * float(sf)),
+                   "sigma2": p.sigma2, "sigma2_err": p.sigma2_err,
+                   "sigma2_at_bound": p.sigma2_at_bound}
+                  for p in fit.paths],
+    }
+
+
 def _fit_outputs(fit_out, outdir: Path, stem: str) -> dict:
     """把 S7 结果写成 CSV + JSON，返回可并入 meta 的摘要。"""
     mode = fit_out["mode"]
+    meta = {k: v for k, v in fit_out.items() if k not in ("structure", "fit")}
     if mode == "l1_first_shell":
         l1 = fit_out["l1"]
         rows = [[l1.get("ligand", ""), l1.get("N"), l1.get("N_err"),
                  l1.get("R"), l1.get("R_err"), l1.get("sigma2"), "",
                  l1.get("r0"), l1.get("delta_e0"), l1.get("rf"),
                  l1.get("n_independent"), l1.get("n_variables")]]
-        meta = {k: v for k, v in fit_out.items() if k != "structure"}
+        if fit_out.get("fit") is not None:
+            meta["fit"] = _serialize_fit_obj(fit_out["fit"])
     else:
         fit = fit_out["fit"]
         rows = []
@@ -88,35 +123,7 @@ def _fit_outputs(fit_out, outdir: Path, stem: str) -> dict:
             rows.append([p.label, p.degeneracy, p.n_err, p.r, p.delta_r_err,
                          p.sigma2, p.sigma2_err, p.reff, fit.delta_e0,
                          fit.r_factor, fit.n_independent, fit.n_variables])
-        meta = {k: v for k, v in fit_out.items() if k != "structure"}
-        sf = getattr(fit, "nidp_scale_factor", None)
-        meta["fit"] = {
-            "delta_e0": fit.delta_e0, "delta_e0_err": fit.delta_e0_err,
-            "r_factor": fit.r_factor, "n_independent": fit.n_independent,
-            "n_variables": fit.n_variables, "overfit": fit.overfit,
-            "nidp_scale_factor": sf,
-            "rmin": fit.rmin, "rmax": fit.rmax,
-            "kmin": fit.kmin, "kmax": fit.kmax, "s02": fit.s02,
-            "kweights": list(fit.kweights or ()),
-            "r_factors_by_kweight": (fit.r_factors_by_kweight or {}),
-            "epsilon_r": fit.epsilon_r,
-            "chi_square": fit.chi_square,
-            "reduced_chi_square": fit.reduced_chi_square,
-            "mixture_weights": fit.mixture_weights,
-            "parameter_names": fit.parameter_names,
-            "correlation": ([[round(float(v), 5) for v in row]
-                             for row in fit.correlation]
-                            if fit.correlation is not None else None),
-            "paths": [{"label": p.label, "reff": p.reff,
-                       "N": p.degeneracy, "N_err": p.n_err,
-                       "N_err_nidp": (None if (p.n_err is None or sf is None)
-                                      else float(p.n_err) * float(sf)),
-                       "R": p.r, "R_err": p.delta_r_err,
-                       "R_err_nidp": (None if (p.delta_r_err is None or sf is None)
-                                      else float(p.delta_r_err) * float(sf)),
-                       "sigma2": p.sigma2, "sigma2_err": p.sigma2_err,
-                       "sigma2_at_bound": p.sigma2_at_bound}
-                      for p in fit.paths]}
+        meta["fit"] = _serialize_fit_obj(fit)
     header = ["shell", "N", "N_err", "R_A", "R_err", "sigma2",
               "sigma2_err", "Reff_A", "delta_e0", "R_factor",
               "N_independent", "N_variables"]
@@ -254,10 +261,11 @@ def _resolve_s02_for_paths(args, paths, absorber_hint=None):
         if hint:
             element = _normalize_element(hint)
         else:
-            element, _source = detect_absorber(paths[0])
+            element, _source = detect_absorber(
+                paths[0], prj_group=getattr(args, "prj_group", None))
         if element is None:
             raise XAFSConfigError(
-                "absorber", f"{Path(paths[0]).name}: 启用 --chemical-state "
+                "absorber", f"{xafs_io.scan_spec_label(paths[0])}: 启用 --chemical-state "
                              f"但无法判定吸收元素；请显式给 --absorber")
         s02, source = absorber_mod.resolve_s02_spec(element, state_spec)
         if s02 is not None:
@@ -274,40 +282,44 @@ def _resolve_s02_for_paths(args, paths, absorber_hint=None):
         # S₀² 与真正用于拟合的元素错配。
         element = _normalize_element(hint)
     else:
-        element, _source = detect_absorber(paths[0])
+        element, _source = detect_absorber(
+            paths[0], prj_group=getattr(args, "prj_group", None))
     if element is None:
         raise XAFSConfigError(
-            "T5", f"{Path(paths[0]).name}: 启用 --s02-from-t5 但无法判定"
+            "T5", f"{xafs_io.scan_spec_label(paths[0])}: 启用 --s02-from-t5 但无法判定"
                    f"吸收元素；请显式给 --absorber")
     return load_t5_s02(element)
 
 
-def detect_absorber(path, fallback: str | None = None) -> tuple[str | None, str]:
+def detect_absorber(path, fallback: str | None = None, *,
+                    prj_group: str | None = None) -> tuple[str | None, str]:
     """从 XDI/纯文本头自动判定吸收元素。
 
     优先级：XDI ``Element.symbol`` / 纯文本 ``Absorber:`` 头 >
     ``RawScan.meta['element']`` > CLI ``--absorber`` 兜底。
     返回 ``(element, source)``；``source`` 用于报告溯源。
     """
-    p = Path(path)
+    file_path, _spec_group = xafs_io.split_scan_spec(path)
+    if file_path.suffix.lower() != ".prj":
+        try:
+            head = file_path.read_text(encoding="utf-8", errors="replace")[:8192]
+        except OSError:
+            head = ""
+        patterns = [
+            ("xdi_element", r"(?im)^\s*#\s*Element\.symbol\s*:\s*([A-Za-z]{1,2})\b"),
+            ("xdi_element", r"(?im)^\s*#\s*Element\s*:\s*([A-Za-z]{1,2})\b"),
+            ("header_absorber", r"(?im)^\s*#\s*Absorber\s*[:=]\s*([A-Za-z]{1,2})\b"),
+        ]
+        for source, pat in patterns:
+            m = re.search(pat, head)
+            if m:
+                el = _normalize_element(m.group(1))
+                if el:
+                    return el, source
     try:
-        head = p.read_text(encoding="utf-8", errors="replace")[:8192]
-    except OSError:
-        head = ""
-    patterns = [
-        ("xdi_element", r"(?im)^\s*#\s*Element\.symbol\s*:\s*([A-Za-z]{1,2})\b"),
-        ("xdi_element", r"(?im)^\s*#\s*Element\s*:\s*([A-Za-z]{1,2})\b"),
-        ("header_absorber", r"(?im)^\s*#\s*Absorber\s*[:=]\s*([A-Za-z]{1,2})\b"),
-    ]
-    for source, pat in patterns:
-        m = re.search(pat, head)
-        if m:
-            el = _normalize_element(m.group(1))
-            if el:
-                return el, source
-    try:
-        scan = xafs_io.read_scan(p)
-        el = _normalize_element((scan.meta or {}).get("element"))
+        scan = xafs_io.read_scan(path, prj_group=prj_group)
+        sc_meta = scan.meta or {}
+        el = _normalize_element(sc_meta.get("element") or sc_meta.get("absorber"))
         if el:
             return el, "scan_meta"
     except Exception:  # noqa: BLE001 - 头信息已失败，读整谱失败不致命
@@ -361,7 +373,8 @@ def _multi_row(element, path, res, outdir) -> dict:
 
 
 def run_multi_element(files, outdir, *, fallback_absorber=None,
-                      s02_map=None, run_one=None, verbose=True) -> dict:
+                      s02_map=None, run_one=None,
+                      prj_group=None, verbose=True) -> dict:
     """T7：逐文件自动判定吸收元素，分元素独立处理并输出综合报告。
 
     ``run_one(file, element, sub_outdir) -> PipelineResult`` 是注入点：
@@ -378,14 +391,15 @@ def run_multi_element(files, outdir, *, fallback_absorber=None,
     rows, errors = [], []
     seen = set()
     for f in files:
-        element, source = detect_absorber(f, fallback_absorber)
+        element, source = detect_absorber(
+            f, fallback_absorber, prj_group=prj_group)
         if element is None:
             errors.append({"file": str(f),
                            "error": "无法判定吸收元素：头信息缺失且未给 --absorber"})
             if verbose:
-                print(f"  ❌ {Path(f).name}: 无法判定吸收元素")
+                print(f"  ❌ {xafs_io.scan_spec_label(f)}: 无法判定吸收元素")
             continue
-        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", Path(f).stem)[:60]
+        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", xafs_io.scan_spec_stem(f))[:60]
         sub = outdir / f"{element}_{stem}"
         # 同名同元素文件不应互相覆盖；出现时加序号。
         base, i = sub, 1
@@ -395,11 +409,12 @@ def run_multi_element(files, outdir, *, fallback_absorber=None,
         seen.add(sub)
         if verbose:
             print(f"[multi {len(rows) + len(errors) + 1}/{len(files)}] "
-                  f"{element} <- {Path(f).name} ({source})")
+                  f"{element} <- {xafs_io.scan_spec_label(f)} ({source})")
         try:
             res = (run_one(f, element, sub) if run_one is not None
                    else process_sample([f], sub, absorber=element,
-                                       s02=s02_map.get(element)))
+                                       s02=s02_map.get(element),
+                                       prj_group=prj_group))
             row = _multi_row(element, f, res, sub)
             row["absorber_source"] = source
             row["s02_override"] = s02_map.get(element)
@@ -569,7 +584,9 @@ def process_sample(paths, outdir, align: bool = False,
           plot: str = "none",
           plot_formats: tuple[str, ...] = ("png",),
           plot_dpi: int = 300,
-          s02_evidence: dict | None = None):
+          s02_evidence: dict | None = None,
+          prj_group: str | None = None,
+          apply_eshift: bool = False):
     """
     跑完 S1–S6 并落盘。返回 PipelineResult。
 
@@ -600,36 +617,49 @@ def process_sample(paths, outdir, align: bool = False,
         self_absorption_density=self_absorption_density,
         self_absorption_angles=self_absorption_angles,
         self_absorption_line=self_absorption_line,
+        prj_group=prj_group, apply_eshift=apply_eshift,
         verbose=verbose)
     result.outdir = outdir
-    result.stem = Path(paths[0]).stem
+    result.stem = xafs_io.scan_spec_stem(paths[0])
     # 正式 CN 溯源：输入文件哈希（不含绝对路径与 mtime）。
     result.data_sha256 = cn_table.data_sha256(paths)
 
-    # ---- B2-2 XANES LCF（可选；端元文件先各自走 S1–S3）----
-    # 继承主样本预处理参数，避免标样与样本使用不同 e0/post_window/mback/despike/deadtime/wt_sigma
+    eff_absorber = absorber or getattr(result, "absorber_symbol", None)
+    if not eff_absorber and paths:
+        eff_absorber, _ = detect_absorber(paths[0], prj_group=prj_group)
+
+    # ---- B2-2 XANES LCF（可选；端元只走 S1–S3，兼容纯 XANES 短扫描标样）----
+    # 继承主样本预处理参数，避免标样与样本使用不同 e0/post_window/mback/despike/deadtime
     if lcf_standards:
         std_norms = {}
         for std_path in lcf_standards:
-            std_res = xafs_pipeline.process_sample(
-                [std_path], absorber=absorber, strict=False,
+            std_norm = xafs_pipeline.process_xanes_scan(
+                [std_path], absorber=eff_absorber,
+                edge_energy=(edge_energy or float(result.norm.e0)),
                 e0_method=e0_method, post_window=post_window,
                 mback=mback, despike=despike, deadtime=deadtime,
-                wt_sigma=wt_sigma, verbose=False)
-            std_norms[Path(std_path).stem] = std_res.norm
+                apply_eshift=apply_eshift)
+            lbl = xafs_io.scan_spec_label(std_path)
+            if lbl in std_norms:
+                idx = 2
+                while f"{lbl}_{idx}" in std_norms:
+                    idx += 1
+                lbl = f"{lbl}_{idx}"
+            std_norms[lbl] = std_norm
         lcf_res = xafs_lcf.lcf_from_scans(
-            result.norm, std_norms, mode="xanes")
+            result.norm, std_norms, mode="xanes",
+            energy_scale="absolute")
+        result.lcf = lcf_res
         xafs_io.write_json(outdir / f"{result.stem}_lcf.json",
                            xafs_lcf.lcf_summary(lcf_res))
         if verbose:
             w = ", ".join(f"{k}={v:.3f}" for k, v in
                           lcf_res["weights"].items())
             print(f"  [B2-2] XANES LCF: {w}   Rf={lcf_res['r_factor']:.2e}")
+            if lcf_res.get("alignment_warning"):
+                print(f"  ⚠ [B2-2] {lcf_res['alignment_warning']}")
 
     # P1b phase resolution: parse --phase-* into StructureModel (formal CN strict track)
-    eff_absorber = absorber or getattr(result, "absorber_symbol", None)
-    if not eff_absorber and paths:
-        eff_absorber, _ = detect_absorber(paths[0])
     structure_model = None
     structure_models: list = []
     gate_result = None
@@ -902,6 +932,8 @@ def process_sample(paths, outdir, align: bool = False,
                 meta["rdf"] = rdf_tab["summary"]
     if result.xanes_cross_check:
         meta["xanes_cross_check"] = result.xanes_cross_check
+    if getattr(result, "lcf", None):
+        meta["lcf"] = xafs_lcf.lcf_summary(result.lcf)
 
     # P6.4：参数 / 门禁 / 决策 / 摘要台账（只增不改）。
     if provenance is not None:
@@ -1269,6 +1301,10 @@ def main():
                              "至少保留 2 条（默认关闭；默认均值逐位兼容）")
     parser.add_argument("--lcf-standards", default=None,
                         help="XANES LCF 端元文件（逗号分隔），输出 <stem>_lcf.json")
+    parser.add_argument("--prj-group", default=None,
+                        help="Athena .prj 多扫描组名（也可直接用 file.prj::Group 指定）")
+    parser.add_argument("--apply-eshift", action="store_true",
+                        help="读取 Athena .prj 时应用记录的 bkg_eshift 能量平移校准（默认关闭）")
     parser.add_argument("--batch-dir", default=None,
                         help="批处理目录：对该目录下所有匹配的数据文件循环处理，"
                              "失败隔离到 batch_errors.json，与 files 互斥；"
@@ -1358,9 +1394,12 @@ def main():
     # ---- Phase I–III + P1b/P5 开关：CLI 显式 > 配置文件 > 默认 ----
     for _key in ("deadtime", "reject_outlier_scans", "include_ms",
                  "isotropic_deltar", "mback", "hetero_cocupancy",
-                 "phase_correct", "chi2_contour", "operando"):
+                 "phase_correct", "chi2_contour", "operando",
+                 "apply_eshift"):
         if not getattr(args, _key, False) and config.get(_key):
             setattr(args, _key, True)
+    if args.prj_group is None and config.get("prj_group") is not None:
+        args.prj_group = config["prj_group"]
     # P1b/P5（两个 CLI 共用同一套键，避免 report 端静默忽略）
     xafs_config.apply_p1b_config(args, config)
     if args.deglitch is None and config.get("deglitch") is not None:
@@ -1664,11 +1703,14 @@ def main():
                 provenance=prov,
                 plot=args.plot,
                 plot_formats=plot_formats,
-                plot_dpi=int(args.plot_dpi))
+                plot_dpi=int(args.plot_dpi),
+                prj_group=args.prj_group,
+                apply_eshift=args.apply_eshift)
 
         _multi_summary = run_multi_element(
             files, args.outdir, fallback_absorber=args.absorber,
-            s02_map=multi_s02, run_one=_run_one_element)
+            s02_map=multi_s02, run_one=_run_one_element,
+            prj_group=args.prj_group)
         # 批处理契约：任一文件失败即以非零码退出，便于 CI/脚本捕获
         if _multi_summary.get("n_failed"):
             raise SystemExit(1)
@@ -1704,7 +1746,7 @@ def main():
         op_s02, op_s02_src = _resolve_s02_for_paths(args, files, args.absorber)
         results = []
         for i, fpath in enumerate(files, 1):
-            print(f"[operando {i}/{len(files)}] {Path(fpath).name}")
+            print(f"[operando {i}/{len(files)}] {xafs_io.scan_spec_label(fpath)}")
             results.append(process_sample(
                 [fpath], Path(args.outdir) / f"scan_{i - 1:02d}",
                 align=args.align, absorber=args.absorber,
@@ -1727,17 +1769,27 @@ def main():
                 s02=op_s02,
                 s02_source=op_s02_src,
                 provenance=prov,
-                verbose=False))
+                verbose=False,
+                prj_group=args.prj_group,
+                apply_eshift=args.apply_eshift))
         std_scans = None
         if lcf_standards:
             std_scans = {}
+            op_edge_e0 = args.edge_energy or (
+                float(results[0].norm.e0) if results else None)
             for p in lcf_standards:
-                std = xafs_pipeline.process_sample(
-                    [p], absorber=args.absorber, strict=False,
+                std_norm = xafs_pipeline.process_xanes_scan(
+                    [p], absorber=args.absorber, edge_energy=op_edge_e0,
                     e0_method=args.e0_method, post_window=post_window,
-                    mback=args.mback, despike=args.despike, deadtime=args.deadtime,
-                    wt_sigma=wt_sigma, verbose=False)
-                std_scans[Path(p).stem] = std.norm
+                    mback=args.mback, despike=args.despike,
+                    deadtime=args.deadtime, apply_eshift=args.apply_eshift)
+                lbl = xafs_io.scan_spec_label(p)
+                if lbl in std_scans:
+                    idx = 2
+                    while f"{lbl}_{idx}" in std_scans:
+                        idx += 1
+                    lbl = f"{lbl}_{idx}"
+                std_scans[lbl] = std_norm
         op = xafs_lcf.run_operando_series(
             results, standards=std_scans,
             **xafs_config.operando_kwargs_from_config(config))
@@ -1775,11 +1827,11 @@ def main():
         print("=" * 66)
         used_stems: dict[str, int] = {}
         for i, fpath in enumerate(files, 1):
-            stem = Path(fpath).stem
+            stem = xafs_io.scan_spec_stem(fpath)
             cnt = used_stems.get(stem, 0) + 1
             used_stems[stem] = cnt
             sub_out = batch_out / (stem if cnt == 1 else f"{stem}__{cnt}")
-            print(f"\n[{i}/{len(files)}] {Path(fpath).name}")
+            print(f"\n[{i}/{len(files)}] {xafs_io.scan_spec_label(fpath)}")
             try:
                 file_s02, file_s02_src = _resolve_s02_for_paths(
                     args, [fpath], args.absorber)
@@ -1836,7 +1888,9 @@ def main():
                     provenance=prov,
                     plot=args.plot,
                     plot_formats=plot_formats,
-                    plot_dpi=int(args.plot_dpi))
+                    plot_dpi=int(args.plot_dpi),
+                    prj_group=args.prj_group,
+                    apply_eshift=args.apply_eshift)
             except Exception as exc:  # 批处理：单个失败不中断整批
                 errors.append({"file": fpath, "error": str(exc)})
                 print(f"  ❌ 失败: {exc}")
@@ -1903,7 +1957,9 @@ def main():
         print_params=args.print_params,
         plot=args.plot,
         plot_formats=plot_formats,
-        plot_dpi=int(args.plot_dpi))
+        plot_dpi=int(args.plot_dpi),
+        prj_group=args.prj_group,
+        apply_eshift=args.apply_eshift)
 
     print("-" * 66)
     for f in sorted(result.outdir.glob(f"{result.stem}*")):

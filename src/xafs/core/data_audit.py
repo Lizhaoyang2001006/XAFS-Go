@@ -143,7 +143,11 @@ def audit_preprocessing(res: Any, kmax_used: float | None = None) -> dict[str, A
             snr_source=snr_source,
         ))
     elif single_est.get("tail_rise_ratio") is not None and float(single_est["tail_rise_ratio"]) >= 0.90:
-        if kmax_eff is None or kmax_eff > 10.5:
+        tail_hf = single_est.get("tail_hf_ratio")
+        rel_kmax = single_est.get("reliable_kmax")
+        noisy_hf = (tail_hf is None or float(tail_hf) >= 0.20)
+        low_rel = (rel_kmax is None or float(rel_kmax) < 13.0)
+        if noisy_hf and low_rel and (kmax_eff is None or kmax_eff > 10.5):
             checks.append(_check_entry(
                 "high_k_tail_amplification", "warn",
                 f"尾端 k^wχ(k) 振幅不降反升（tail/mid={float(single_est['tail_rise_ratio']):.2f}），"

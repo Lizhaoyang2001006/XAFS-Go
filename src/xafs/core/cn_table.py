@@ -90,9 +90,11 @@ def data_sha256(paths) -> str:
     只用于正式 CN 溯源：不包含文件名、绝对路径、mtime 或临时目录，
     因此同一批原始数据换目录/改名后哈希不变。
     """
+    import xafs_io
+
     digest = hashlib.sha256()
     for item in paths:
-        path = Path(item)
+        path, _ = xafs_io.split_scan_spec(item)
         try:
             payload = path.read_bytes()
         except OSError:

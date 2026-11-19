@@ -778,6 +778,7 @@ def fit_identified(res, motif_id: str | None = None,
             sid = structure_id.identify_result(
                 res, absorber_symbol=absorber_symbol,
                 l1_ligand=l1_ligand, l1_geometry=l1_geometry,
+                fit_rmin=rmin, fit_rmax=rmax, kweights=kweights,
                 vary_c3=vary_c3, fit_space=fit_space, s02=s02,
                 verbose=verbose)
 
@@ -791,12 +792,72 @@ def fit_identified(res, motif_id: str | None = None,
                 detail = sid.get("l1_error", "L1 拟合未生成")
                 raise XAFSDataError(
                     "FIT", f"识别状态 {status}，不能自动全拟合：{detail}")
-            l1_c3_bound = bool(l1.get("c3_at_bound", False))
             if bvs_restraint is not None:
                 raise XAFSConfigError(
                     "FIT", "bvs_restraint 需要结构模型给出的配体与参考键长；"
                            "识别状态不是 confident，L1 合成团簇的 BVS 无物理"
                            "意义，拒绝静默忽略该约束")
+
+            l1_art = getattr(res, "_l1_fit_artifacts", None)
+            kw_key = (tuple(int(w) for w in kweights)
+                      if isinstance(kweights, (list, tuple)) else kweights)
+
+            def _norm_c3(v):
+                if v is None or v is False:
+                    return False
+                if v is True:
+                    return True
+                if isinstance(v, str):
+                    key = v.strip().lower()
+                    if key == "all":
+                        return True
+                    if key == "first":
+                        return (0,)
+                    return False
+                if isinstance(v, (list, tuple, set)):
+                    return tuple(sorted({int(i) for i in v})) or False
+                return v
+
+            want_sig = (absorber.symbol, str(l1_ligand).strip().capitalize(),
+                        l1_geometry, rmin, rmax, kw_key,
+                        _norm_c3(vary_c3), fit_space, s02)
+
+            def _norm_sig(sig):
+                if not sig or len(sig) != len(want_sig):
+                    return sig
+                return (
+                    (str(sig[0]).strip().capitalize() if sig[0] else None),
+                    str(sig[1]).strip().capitalize(),
+                    sig[2], sig[3], sig[4], sig[5],
+                    _norm_c3(sig[6]), sig[7], sig[8],
+                )
+            explicit_l1_override = (rmin is not None or rmax is not None
+                                    or bool(kweights))
+            l1_fit_obj = None
+            l1_path_files: list[str] = list(l1.get("path_files") or [])
+            if (isinstance(l1_art, dict) and l1_art.get("fit") is not None
+                    and _norm_sig(l1_art.get("sig")) == want_sig):
+                l1_fit_obj = l1_art["fit"]
+                l1_path_files = list(l1_art.get("path_files") or l1_path_files)
+            elif explicit_l1_override or (
+                    isinstance(l1_art, dict)
+                    and _norm_sig(l1_art.get("sig")) != want_sig):
+                l1, l1_fit_obj, l1_path_files = structure_id._l1_first_shell_fit_full(
+                    res, absorber_symbol=absorber.symbol,
+                    ligand=l1_ligand, geometry=l1_geometry,
+                    rmin=rmin, rmax=rmax, kweights=kweights,
+                    vary_c3=vary_c3, fit_space=fit_space, s02=s02,
+                    verbose=verbose)
+                sid["l1_first_shell"] = l1
+                res._l1_fit_artifacts = {
+                    "fit": l1_fit_obj,
+                    "path_files": l1_path_files,
+                    "sig": want_sig,
+                    "ligand": str(l1_ligand).strip().capitalize(),
+                    "geometry": l1_geometry,
+                }
+
+            l1_c3_bound = bool(l1.get("c3_at_bound", False))
             norm_obj = getattr(res, "norm", None)
             plateau_val = (float(getattr(norm_obj, "plateau", float("nan")))
                            if norm_obj is not None else float("nan"))
@@ -831,9 +892,31 @@ def fit_identified(res, motif_id: str | None = None,
                    "structure": sid, "l1": l1,
                    "self_absorption": self_abs,
                    "cn_systematics": systematic_budget(
-                       None, flags=l1_flags, self_abs=self_abs),
+                       l1_fit_obj, flags=l1_flags, self_abs=self_abs),
                    "warning": l1.get(
                        "warning", "仅第一壳可信；长程结构未知")}
+            if l1_fit_obj is not None:
+                l1_lig_sym = str(l1.get("ligand", l1_ligand)).strip().capitalize()
+                l1_shells = [
+                    {
+                        "label": str(getattr(p, "label", "")
+                                     or f"{absorber.symbol}-{l1_lig_sym}"),
+                        "scatterer": l1_lig_sym,
+                        "reff": round(float(getattr(p, "reff", p.r)), 4),
+                        "reff_mean": round(float(getattr(p, "reff", p.r)), 4),
+                        "degen": float(getattr(p, "degeneracy", 0.0)),
+                        "n_members": 1,
+                        "group": None,
+                        "kind": "l1_synthetic",
+                    }
+                    for p in getattr(l1_fit_obj, "paths", [])
+                ]
+                out["fit"] = l1_fit_obj
+                out["path_files"] = list(l1_path_files)
+                out["rmin"] = float(l1.get("rmin", 1.0))
+                out["rmax"] = float(l1.get("rmax", 2.3))
+                out["shells"] = l1_shells
+                out["fit_space"] = getattr(l1_fit_obj, "fit_space", fit_space)
             if self_abs["risk"] in ("high", "unknown",
                                     "corrected_unreliable"):
                 prefix = ("荧光自吸收校正不可靠" if self_abs["corrected"]
@@ -1485,6 +1568,7 @@ def run(res, identify: bool = True, fit: bool = False,
             out["structure"] = structure_id.identify_result(
                 res, absorber_symbol=absorber_symbol,
                 l1_ligand=l1_ligand, l1_geometry=l1_geometry,
+                fit_rmin=fit_rmin, fit_rmax=fit_rmax, kweights=kweights,
                 vary_c3=vary_c3, fit_space=fit_space, s02=s02,
                 verbose=verbose)
             res.structure = out["structure"]

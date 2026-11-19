@@ -24,10 +24,10 @@
 
 确认你手头有以下四样（第 4 项无先验时可走 L1）：
 
-1. **原始谱文件**：如 `sample_Fe.xdi`、`fe.060`（支持 XDI / XDAC / 纯文本 dat，可多扫描）。
+1. **原始谱文件**：如 `sample_Fe.xdi`、`fe.060`、`project.prj::Group`（支持 XDI / XDAC / 多列文本 dat，以及 Athena `.prj` 通过 `file.prj::Group` 或 `--prj-group` 选组并可选 `--apply-eshift` 应用 `bkg_eshift` 校准；可多扫描）。
 2. **吸收元素与边**：如 `Fe K-edge`、`Pt L₃-edge`。若文件头无此信息，必须在命令行通过 `--absorber` 指定。
 3. **化学态大致判断**：如“氧化物”“金属箔”“羟基氧化物”。这决定了 `S₀²` 的取值（见附录 D）。
-4. **结构库确认**：确认常用骨架已在 `_structure_lib/<元素>/` 中，或手头有候选晶相的 `.cif` 文件；若已知特定晶相，可用 `--cif path/to/model.cif` 直接指定。
+4. **结构库确认**：确认常用骨架已在 `_structure_lib/<元素>/` 中，或手头有候选晶相的 `.cif` 文件；若已知特定晶相做正式定量 CN，可用 `--formal-cn --phase-cif path/to/model.cif` 直接指定。
 
 > 不确定元素或边？不要猜。先查文献或问课题组，管线在元素不明确时会直接报错退出。
 
@@ -45,7 +45,10 @@ python run_xafs.py data/sample_Fe.xdi --absorber Fe --fit -o xafs_out/sample_Fe
 | 金属 Fe 单壳 bcc（严格只拟第一壳，表观距离截断） | `--fit-motif fe_bcc --chemical-state metal --fit-rmax 2.25` |
 | 指定结构候选 | `--fit-motif goethite --allow-ambiguous` |
 | 混合相 / 多位点权重拟合 | `--fit-weights` |
-| 荧光模式（稀样品 / 薄膜，多通道探测器信号自动累加） | `--mode fluorescence` |
+| 荧光模式 Booth 自吸收校正（荧光/透射由列头与 `.prj` 自动判定） | `--self-absorption-formula <化学式> --self-absorption-thickness <cm> --self-absorption-density <g/cm3>` |
+| Athena `.prj` 多扫描组选取 & `bkg_eshift` 能量校准 | `"proj.prj::Group" --apply-eshift`（或 `--prj-group Group`） |
+| XANES 线性组合拟合（绝对光子能量轴保留边移） | `--lcf-standards std1.xdi,std2.xdi`（同步输出 `<stem>_xanes_lcf.png`、`*_lcf.json` 与 `summary.csv`） |
+| 发表级 6 面板论文主图 | `--plot paper`（或独立 CLI `PYTHONPATH=src python -m xafs.cli.paper_figures ...`） |
 | 多元素批处理 | `python run_xafs.py a.xdi b.xdi --multi-element -o xafs_out/batch` |
 
 所有输出统一落在 `xafs_out/sample_Fe/`，不覆盖已有结果。
@@ -169,11 +172,11 @@ graph TD
 
 | 现象 | 可能原因 | 解法 |
 |:-----|:---------|:-----|
-| `ValueError / ChannelError: I0/I ratio median out of bounds` | 把荧光信号当透射了，或者通道列选错 | 检查原始文件，指定 `--mode fluorescence` 或手动指定列映射 |
+| `ValueError / ChannelError: I0/I ratio median out of bounds` | 把荧光信号当透射了，或者通道列选错 | 检查原始文件列名与极性（管线根据列头 `I1/I0`、`ln(I0/I1)` 或 `.prj` `ln` 标志自动判定透射/荧光），浓样荧光需加 Booth `--self-absorption-*` 参数 |
 | `ConvergenceError: N_idp <= n_varys` | 拟合窗口太窄或路径放得太多，导致过拟合（违反独立点数门禁） | 缩小 R 拟合上限（如 `--fit-rmax 2.2` 只拟第一壳），或减少自由变量 |
 | `Structure ID: no_match` | 没有匹配的体相 Motif（弱结晶、非晶、掺杂团簇） | 退守 L1 单壳层：`--fit-rmax 2.1` 只拟第一壳 |
 | `Structure ID: ambiguous` | 最优与次优候选难分 | 只做 L1 第一壳，不自动上多壳层；或人工指定 `--fit-motif` |
-| 拟合 N 出现负值或极大误差 | S₀² 选错、结构模型不对、或 N–σ²–ΔE₀ 强相关 | 先降级到 L1 第一壳，再排查；**若 N–σ² 关联度过高（|ρ| > 0.85），开启多 k 权重联合拟合（如 --k-weights 1,2,3）** |
+| 拟合 N 出现负值或极大误差 | S₀² 选错、结构模型不对、或 N–σ²–ΔE₀ 强相关 | 先降级到 L1 第一壳，再排查；**若 N–σ² 关联度过高（\|ρ\| > 0.85），开启多 k 权重联合拟合（如 `--fit-kweights 1,2,3`）** |
 | SACs 中 C/N/O 轻元素重叠拟合 | M–C、M–N、M–O 后向散射振幅 F(k) 与相位 Φ(k) 极度接近，无外加约束下同时放入多条路径会导致严重过拟合与虚假配位数 | **严禁同时自由拟合 M–C/M–N/M–O 三条独立路径**。规范做法：统一按主导元素（如 M–N）等效单壳层拟合，报告“M-(N/C/O) 有效总配位数”；或结合 DFT 模型固定键长差进行约束拟合 |
 
 > ⚠️ **荧光自吸收提醒**：荧光模式适用于稀样品（通常负载量 **< 3 wt%** 或厚度极薄）。高浓度样品若用荧光采集，容易发生自吸收效应（Self-absorption），导致实验震荡幅度被压缩，拟合出的配位数 **N 会系统性偏小**。高浓度样品建议优先使用透射模式；若必须用荧光，需提供样品总化学式、厚度、有效密度、入出射角进行 Booth 自吸收校正。**若无法获取精确密度/厚度进行 Booth 校正，需在论文中明确声明该荧光谱配位数 N 仅具半定量比较意义（可能系统性偏小），但拟合所得的键长 R 及其相对变化依然具有高度可靠的物理参考价值。**
@@ -197,7 +200,7 @@ graph TD
    │   └─ 否 → 下一步
    │
    ├─ N–σ² 关联度 |ρ| > 0.85？
-   │   ├─ 是 → 🟡 黄灯：开启多 k 权重联合拟合（如 --k-weights 1,2,3），仍不可分则降级 L1
+   │   ├─ 是 → 🟡 黄灯：开启多 k 权重联合拟合（如 `--fit-kweights 1,2,3`），仍不可分则降级 L1
    │   └─ 否 → 下一步
    │
    ├─ N 接近整数且误差棒合理？
@@ -225,9 +228,9 @@ EXAFS 振幅项为 `N × S₀²`，二者在数学上完全简并（相关系数
 适用于已知晶体结构的金属箔参比样（如 bcc-Fe 第一壳 N=8），用于测得该光束线/实验条件下的实测 S₀²。
 
 ```bash
-# Fe 金属箔标定 S₀²：固定第一壳配位数 N=8，浮动 S₀²
-# 表观距离截截断（≤ 2.25 Å），避开第二壳峰（2.50 Å）
-python run_xafs.py data/Fe_foil.xdi --absorber Fe --fit-motif fe_bcc --fix-n --float-s02 --fit-rmax 2.25 -o xafs_out/Fe_foil_S02
+# Fe 金属箔标定 S₀²：固定晶体学配位数 N，跨三窗口联合标定 S₀²（默认按 --fit-shells 1 拟合第一壳；可用 --fit-shells 2 对 bcc 双壳联合标定）
+PYTHONPATH=src:src/xafs/domain:src/xafs/adapters:src/xafs/io:src/xafs/core:src/xafs/cli \
+  python src/xafs/core/calibrate_s02.py data/Fe_foil.xdi --absorber Fe --motif fe_bcc -o xafs_out/Fe_foil_S02
 ```
 
 **预期终端输出（示例）：**
@@ -380,8 +383,11 @@ python run_xafs.py foil.xdi --absorber Fe --fit-motif fe_bcc --chemical-state me
 | `--rbkg` | 背景扣除截断距离 (Å) | 默认 1.0–1.1 Å。若体系含超短键（如高价 M=O、Mo≡N，表观峰落在 1.1–1.3 Å），必须压低至 0.8–0.9 Å，防止有效震荡被当作背景抹掉。**但不可盲目压低**：AUTOBK 样条背景的自由节点数正比于 $R_{\text{bkg}}$（$N_{\text{spline}} \approx \frac{2 \Delta k R_{\text{bkg}}}{\pi}$）。若体系中并无超短键而盲目将 $R_{\text{bkg}}$ 压至 < 0.8 Å，样条函数将失去灵活性，无法拟合真实原子吸收背景，残余低频背景会泄露至 $R < 1\text{ Å}$，形成非物理虚假峰干扰第一壳拟合。**若压低 $R_{\text{bkg}}$，必须同步确认低 $R$ 截断后样条函数在 k 空间的跟随性（即 $\mu_0(E)$ 是否仍能平滑穿过 $\mu(E)$ 震荡中心），防止引入极低频的非物理背景震荡。** |
 | `--s02` | 显式振幅降因子 | 最高优先级 |
 | `--chemical-state` | 化学态 | metal（用于金属 Fe） |
-| `--cif` | 自定义晶体模型文件路径 | 覆盖库内 Motif 自动比对，用于已知特定晶相 |
-| `--mode` | 测试模式 | transmission（透射，默认，可简写 trans）/ fluorescence（荧光，可简写 fluor） |
+| `--formal-cn --phase-cif` | 正式 CN 通道与自定义 CIF 模型 | 搭配 `--formal-cn` 指定已验证实验晶相 `.cif` 走 CIF 门禁与条件 CN 核算（另有 `--phase-id` 可查相包） |
+| `--prj-group` / `--apply-eshift` | Athena `.prj` 工程组与能移校准 | 指定多扫描 `.prj` 组名（或用 `file.prj::Group`），`--apply-eshift` 应用 `bkg_eshift` |
+| `--lcf-standards` | XANES LCF 端元文件列表（逗号分隔） | 在绝对光子能量轴拟合线性组合比例，并输出 `<stem>_lcf.json`、`<stem>_xanes_lcf.png` 与 `summary.csv` |
+| `--plot` | 出图套件模式 | `none` / `structure` / `full` / `paper`；`paper` 额外生成发表级 6 面板主图（也可独立跑 `PYTHONPATH=src python -m xafs.cli.paper_figures ...`） |
+| `--self-absorption-*` | 荧光模式（S1 自动识别）与 Booth 自吸收校正 | 透射/荧光由列头及 `.prj` `ln` 标志自动判定；浓样荧光需给 `--self-absorption-formula`/`thickness`/`density` 解除 CN 门禁 |
 | `--fit-weights` | 混合相 / 多位点权重拟合 | 仅 kind="mixture"，softmax 放开组分权重（恒正、和=1） |
 | `--allow-ambiguous` | 允许歧义候选强制拟合 | 结构识别非 confident 时也尝试 Top-1 拟合，谨慎使用 |
 
@@ -389,9 +395,10 @@ python run_xafs.py foil.xdi --absorber Fe --fit-motif fe_bcc --chemical-state me
 
 | 文件 | 优先级 | 重点看 |
 |:-----|:-------|:-------|
-| `*_summary.csv` / `*_indicators.csv` | ⭐⭐⭐ | R-factor、ΔE₀、S₀² 来源、结构归属与自吸收门禁 |
+| `*_summary.csv` / `*_indicators.csv` | ⭐⭐⭐ | R-factor、ΔE₀、S₀² 来源、结构归属、自吸收与 LCF 状态 |
 | `*_fit_table.csv` / `.md` / `.png` | ⭐⭐⭐ | N、R、σ²、误差棒（论文表格直接来源） |
-| `*_structure_main.png` / `*_shell_dissection.png` | ⭐⭐⭐ | 逐路径 R 空间拆解、多 k 权重鉴别与相位修正真实键长 |
+| `*_structure_main.png` / `*_shell_dissection.png` | ⭐⭐⭐ | 逐路径 R 空间拆解、多 k 权重鉴别与相位修正真实键长（含 `--plot paper` 的 `*_paper.png`） |
+| `*_xanes_lcf.png` / `*_lcf.json` | ⭐⭐⭐ | XANES LCF 成分比例、残差与全局对准检查警告 |
 | `*_meta.json` | ⭐⭐ | 决策轨迹、门禁命中 |
 | `*_structure_id.json` | ⭐ | 结构识别结果（confident/ambiguous...） |
 

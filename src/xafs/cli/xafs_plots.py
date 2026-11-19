@@ -370,6 +370,9 @@ def build_structure_main_figure(
         "",
     ]
     if fit is not None and getattr(fit, "paths", None):
+        if str(payload.get("mode") or "") == "l1_first_shell" and isinstance(payload.get("l1"), dict):
+            l1 = payload["l1"]
+            lines.append(f"L1 first-shell fallback: {l1.get('ligand', 'X')} ({l1.get('geometry', '')})")
         lines.append(
             f"Rf = {fit.r_factor:.4f}   ΔE₀ = {fit.delta_e0:+.2f}±{fit.delta_e0_err:.2f} eV   "
             f"Nvar/Nidp = {fit.n_variables}/{fit.n_independent:.1f}"
@@ -443,10 +446,12 @@ def build_structure_main_figure(
             alerts.append(fail_msg)
 
     cn_status_txt = str(payload.get("cn_status") or "")
-    is_diag_only = bool(payload.get("diagnostic_only")) or cn_status_txt in (
+    is_l1_mode = str(payload.get("mode") or "") == "l1_first_shell"
+    is_diag_only = bool(payload.get("diagnostic_only")) or is_l1_mode or cn_status_txt in (
         "diagnostic_only", "l1_diagnostic_only", "hypothesis_model_only",
         "no_cif", "consistency_failed",
     )
+    diag_tag = cn_status_txt or ("l1_diagnostic_only" if is_l1_mode else "diagnostic")
     gate_pass = (
         payload.get("cn_reliable") is True
         and payload.get("cn_claim_allowed") is not False
@@ -456,10 +461,10 @@ def build_structure_main_figure(
     if gate_pass:
         gate_line = "Gate check: PASS — quantitative CN allowed"
     elif is_diag_only and not alerts:
-        gate_line = f"Gate check: DIAGNOSTIC/HYPOTHESIS ONLY ({cn_status_txt or 'diagnostic'})"
+        gate_line = f"Gate check: DIAGNOSTIC/HYPOTHESIS ONLY ({diag_tag})"
     elif alerts:
-        prefix = (f"Gate check: HYPOTHESIS/GATED ({cn_status_txt}) — "
-                  if is_diag_only and cn_status_txt
+        prefix = (f"Gate check: HYPOTHESIS/GATED ({diag_tag}) — "
+                  if is_diag_only and diag_tag
                   else "Gate check: FAIL / DOWNGRADE — ")
         gate_line = prefix + "; ".join(alerts)
     else:
@@ -752,6 +757,14 @@ def render_plot_suite(
         result["images"].extend(rdf_imgs)
         result["extra_images"].append((rdf_imgs[0], "非高斯径向分布 g(R) 与热力学平均键长"))
 
+    lcf_res = getattr(res, "lcf", None)
+    if lcf_res:
+        lcf_imgs = special.write_lcf_figure(
+            res, lcf_res, outdir, stem, formats=formats, dpi=dpi)
+        if lcf_imgs:
+            result["images"].extend(lcf_imgs)
+            result["extra_images"].append((lcf_imgs[0], "XANES 线性组合拟合 (LCF) 与残差"))
+
     if mode == "full":
         cand_imgs = build_candidates_compare_figure(
             res, fit_out, outdir, stem, formats=formats, dpi=dpi)
@@ -766,13 +779,28 @@ def render_plot_suite(
         payload = special._fit_payload(fit_out)
         fit_arg = None
         if fit_obj is not None and payload.get("path_files"):
+            is_diag_paper = (
+                bool(payload.get("diagnostic_only"))
+                or str(payload.get("mode") or "") == "l1_first_shell"
+                or payload.get("cn_reliable") is False
+                or payload.get("cn_claim_allowed") is False
+            )
+            cn_st_paper = payload.get("cn_status") or (
+                "l1_diagnostic_only" if str(payload.get("mode") or "") == "l1_first_shell"
+                else ("diagnostic_only" if is_diag_paper else None)
+            )
             fit_arg = paper_figures.fit_result_to_json(
                 fit_obj, path_files=payload["path_files"],
-                cn_status=payload.get("cn_status"),
-                cn_reliable=payload.get("cn_reliable"),
-                structure=payload.get("formal_cn", {}).get("model"))
+                sample=sample or stem,
+                cn_status=cn_st_paper,
+                cn_systematics=payload.get("cn_systematics"),
+                diagnostic_only=is_diag_paper,
+                flags=payload.get("flags"),
+                structure=(payload.get("formal_cn") or {}).get("model"))
         paper_out = paper_figures.make_paper_figure(
             res, absorber=res.absorber_symbol, sample_label=sample or stem,
+            kmin=float(res.ft.kmin), kmax=float(res.ft.kmax),
+            kweight=int(res.ft.kweight), dk=float(getattr(res.ft, "dk", 1.0)),
             fit=fit_arg, out=outdir, stem=f"{stem}_paper", dpi=dpi, verbose=verbose)
         for val in paper_out.values():
             p = Path(val)

@@ -210,6 +210,7 @@ def estimate_single_scan_kmax(chi_k: ChiK, edge_step: float | None = None,
         "k_snr2": None,
         "reliable_kmax": None,
         "tail_rise_ratio": None,
+        "tail_hf_ratio": None,
         "reason": "",
     }
     if k.size < 20 or chi.size != k.size:
@@ -241,10 +242,14 @@ def estimate_single_scan_kmax(chi_k: ChiK, edge_step: float | None = None,
     k_hi = min(float(np.nanmax(k)) - 0.15, 12.5)
     m_end = (k >= max(8.5, k_hi - 2.0)) & (k <= k_hi)
     if np.any(m_mid) and np.any(m_end):
+        kw_chi_end = (k[m_end] ** kweight) * chi[m_end]
         rms_mid = float(np.sqrt(np.mean(((k[m_mid] ** kweight) * chi[m_mid]) ** 2)))
-        rms_end = float(np.sqrt(np.mean(((k[m_end] ** kweight) * chi[m_end]) ** 2)))
+        rms_end = float(np.sqrt(np.mean(kw_chi_end ** 2)))
         if rms_mid > 0:
             out["tail_rise_ratio"] = float(rms_end / rms_mid)
+        if int(np.sum(m_end)) >= 6 and rms_end > 0:
+            d2_end = np.diff(kw_chi_end, 2)
+            out["tail_hf_ratio"] = float(np.std(d2_end) / (np.sqrt(6.0) * rms_end))
     return out
 
 
@@ -335,8 +340,10 @@ def optimize_rbkg(norm: NormalizedScan, rbkg_range=(0.7, 1.6), n_grid=10,
         safe_cap = max(0.95, 0.72 * r1_val)
         safe_cands = [r for r in valid if r["rbkg"] <= safe_cap]
         if safe_cands:
-            s_safe_max = max(r["score"] for r in safe_cands)
-            tied_safe = [r for r in safe_cands if r["score"] >= 0.95 * s_safe_max]
+            safe_band = [r for r in safe_cands if r["rbkg"] >= 0.65 * r1_val]
+            pool = safe_band or safe_cands
+            s_safe_max = max(r["score"] for r in pool)
+            tied_safe = [r for r in pool if r["score"] >= 0.95 * s_safe_max]
             safe_row = min(tied_safe, key=lambda r: r["rbkg"])
             safe_hint = float(safe_row["rbkg"])
 

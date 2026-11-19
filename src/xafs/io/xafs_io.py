@@ -28,7 +28,7 @@ def measurement_identity(scan) -> tuple[bool | None, str]:
         return cached
     meta = getattr(scan, "meta", None) or {}
     mode = str(meta.get("mode") or "unknown")
-    if mode in ("fluor", "fluor_multichannel"):
+    if mode in ("fluor", "fluo", "fluor_multichannel"):
         return True, f"mode={mode}"
     def present(attr):
         value = getattr(scan, attr, None)
@@ -606,18 +606,91 @@ def read_simple(path) -> RawScan:
 _PARSERS = {"XDAC": read_xdac, "XDI": read_xdi, "SIMPLE": read_simple}
 
 
-def read_scan(path) -> RawScan:
-    """按格式分发解析，返回 RawScan。"""
-    path = Path(path)
-    fmt = sniff_format(path)
-    scan = _PARSERS[fmt](path)
+def split_scan_spec(spec) -> tuple[Path, str | None]:
+    """拆分 ``file.prj::Group`` 规格为 ``(Path, group_or_none)``（兼容 Windows 盘符单冒号）。"""
+    s = str(spec)
+    if "::" in s:
+        left, right = s.rsplit("::", 1)
+        lp = Path(left)
+        if lp.suffix.lower() == ".prj" and right.strip():
+            return lp, right.strip()
+    return Path(s), None
+
+
+def scan_spec_label(spec) -> str:
+    """提取可读标签：``.prj::Group`` 返回 Group，普通文件返回 stem。"""
+    path, group = split_scan_spec(spec)
+    return group if group is not None else path.stem
+
+
+def scan_spec_stem(spec) -> str:
+    """生成安全文件名前缀：``.prj::Group`` 返回 ``prjstem__Group``，普通文件保持 ``stem``。"""
+    import re
+
+    path, group = split_scan_spec(spec)
+    if group is None:
+        return path.stem
+    safe_g = re.sub(r"[^\w.-]+", "_", group).strip("_") or "group"
+    return f"{path.stem}__{safe_g}"
+
+
+def _resolve_prj_scan(doc: dict, file_path: Path, group: str | None) -> tuple[RawScan, str]:
+    scans = list(doc.get("scans") or [])
+    if not scans:
+        raise XAFSConfigError("S1", f"{file_path.name}: .prj 中未解析到有效扫描")
+    avail = [
+        str((s.meta or {}).get("label") or (s.meta or {}).get("tag") or f"scan_{i}")
+        for i, s in enumerate(scans)
+    ]
+    if group is None:
+        if len(scans) == 1:
+            return scans[0], avail[0]
+        raise XAFSConfigError(
+            "S1",
+            f"{file_path.name} 包含 {len(scans)} 条扫描，请用 '{file_path.name}::<组名>' "
+            f"或 --prj-group 指定：{avail}",
+        )
+    want = str(group).strip()
+    norm = lambda s: " ".join(str(s).replace("_", " ").split()).lower()
+    for idx, sc in enumerate(scans):
+        meta = sc.meta or {}
+        if want in (str(meta.get("label") or ""), str(meta.get("tag") or "")):
+            return sc, avail[idx]
+    want_n = norm(want)
+    for idx, sc in enumerate(scans):
+        meta = sc.meta or {}
+        if want_n in (norm(meta.get("label") or ""), norm(meta.get("tag") or "")):
+            return sc, avail[idx]
+    raise XAFSConfigError("S1", f"{file_path.name}: 未找到组 {group!r}；可用组：{avail}")
+
+
+def read_scan(path, *, prj_group: str | None = None,
+              apply_eshift: bool = False) -> RawScan:
+    """按格式分发解析，返回 RawScan；原生支持 Athena ``file.prj::Group``。"""
+    file_path, spec_group = split_scan_spec(path)
+    if file_path.suffix.lower() == ".prj":
+        doc = read_prj(file_path, as_scans=True, apply_eshift=apply_eshift)
+        scan, chosen = _resolve_prj_scan(doc, file_path, spec_group or prj_group)
+        scan.meta = dict(scan.meta or {})
+        scan.meta["path"] = str(file_path)
+        scan.meta["prj_group"] = chosen
+        scan.meta.setdefault("mode", "given")
+        scan.meta.setdefault(
+            "format_detected",
+            str((doc.get("meta") or {}).get("source_format") or "PRJ"),
+        )
+        return _order_energy_axis(scan, f"{file_path.name}::{chosen}")
+    fmt = sniff_format(file_path)
+    scan = _PARSERS[fmt](file_path)
     scan.meta.setdefault("format_detected", fmt)
-    return _order_energy_axis(scan, path.name)
+    return _order_energy_axis(scan, file_path.name)
 
 
-def read_scans(paths) -> list:
+def read_scans(paths, *, prj_group: str | None = None,
+               apply_eshift: bool = False) -> list:
     """批量读取；单文件也返回长度为 1 的列表。"""
-    return [read_scan(p) for p in paths]
+    return [read_scan(p, prj_group=prj_group, apply_eshift=apply_eshift)
+            for p in paths]
 
 
 # ================================================================
@@ -935,6 +1008,7 @@ def read_athena_perl_prj(path_or_text, as_scans: bool = False,
         if signal is not None and signal.size != x.size:
             signal = None
         mu = y
+        computed_trans = False
         if (i0 is not None and signal is not None
                 and np.any(i0 != 0) and np.any(signal != 0)
                 and str(args.get("ln", "1")) == "1"
@@ -944,6 +1018,18 @@ def read_athena_perl_prj(path_or_text, as_scans: bool = False,
                               where=signal != 0)
             if np.all(np.isfinite(ratio)) and np.all(ratio > 0):
                 mu = np.log(ratio)
+                computed_trans = True
+        ln_flag = str(args.get("ln", ""))
+        is_nor_flag = str(args.get("is_nor", "0"))
+        if computed_trans:
+            mode_val = "trans"
+            it_arr, if_arr = signal, None
+        elif ln_flag == "0" and signal is not None and is_nor_flag != "1":
+            mode_val = "fluor"
+            it_arr, if_arr = None, signal
+        else:
+            mode_val = "given"
+            it_arr, if_arr = signal, None
         e0_value = args.get("bkg_e0")
         try:
             e0_float = float(e0_value) if e0_value is not None else None
@@ -966,6 +1052,7 @@ def read_athena_perl_prj(path_or_text, as_scans: bool = False,
         meta = {
             "format_detected": "athena_perl",
             "source_format": "athena_perl",
+            "mode": mode_val,
             "label": rec["label"],
             "tag": str(args.get("tag", "")),
             "absorber": str(args.get("bkg_z", "")),
@@ -984,7 +1071,7 @@ def read_athena_perl_prj(path_or_text, as_scans: bool = False,
                 f"Athena .prj 记录了能量平移校准 bkg_eshift={eshift_float:+.3f} eV，"
                 f"默认保持原始能量未平移（若需按 Athena 对齐刻度读取请传 apply_eshift=True）"
             )
-        scans.append(RawScan(energy=x_out, i0=i0, it=signal, mu=mu, meta=meta))
+        scans.append(RawScan(energy=x_out, i0=i0, it=it_arr, ifluor=if_arr, mu=mu, meta=meta))
 
     doc = {
         "xafs_prj": "athena_perl_v1",

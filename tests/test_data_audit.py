@@ -115,6 +115,115 @@ class DataAuditTests(unittest.TestCase):
         self.assertAlmostEqual(best["rbkg"], 1.20, places=2)
         self.assertFalse(best.get("intrusion_risk", False))
 
+    def test_lcf_absolute_energy_scale_and_coherent_tail_audit(self):
+        e = np.linspace(11540.0, 11620.0, 321)
+        shape = lambda e0: (
+            0.5 * (1.0 + np.tanh((e - e0) / 1.8))
+            + 0.45 * np.exp(-((e - (e0 + 2.5)) / 2.2) ** 2)
+        )
+        y0 = shape(11564.0)
+        y4 = shape(11568.0)
+        zeros = np.zeros_like(e)
+        s0 = NormalizedScan(energy=e, mu=y0, mu_norm=y0, pre_edge_line=zeros,
+                            edge_step=1.0, plateau=1.0, e0=11564.0, flattened=y0)
+        s4 = NormalizedScan(energy=e, mu=y4, mu_norm=y4, pre_edge_line=zeros,
+                            edge_step=1.0, plateau=1.0, e0=11568.0, flattened=y4)
+        ymix = 0.30 * y0 + 0.70 * y4
+        targ = NormalizedScan(energy=e, mu=ymix, mu_norm=ymix, pre_edge_line=zeros,
+                              edge_step=1.0, plateau=1.0, e0=11567.2, flattened=ymix)
+
+        res_abs = xafs_lcf.lcf_from_scans(
+            targ, {"S0": s0, "S4": s4}, mode="xanes",
+            xmin=11545.0, xmax=11615.0, energy_scale="absolute",
+        )
+        self.assertEqual(res_abs["energy_scale"], "absolute")
+        self.assertAlmostEqual(res_abs["weights"]["S0"], 0.30, delta=0.02)
+        self.assertAlmostEqual(res_abs["weights"]["S4"], 0.70, delta=0.02)
+        self.assertLess(res_abs["r_factor"], 1e-6)
+
+        # 验证 lcf_summary 保留对齐告警与刻度
+        summ = xafs_lcf.lcf_summary({
+            **res_abs,
+            "alignment_check": {"recommended_shift_eV": -1.5,
+                                "base_r_factor": 0.05, "shifted_r_factor": 0.01},
+            "alignment_warning": "shift -1.5 eV",
+        })
+        self.assertEqual(summ["energy_scale"], "absolute")
+        self.assertEqual(summ["alignment_warning"], "shift -1.5 eV")
+        self.assertAlmostEqual(summ["alignment_check"]["recommended_shift_eV"], -1.5)
+
+        # 原位 NormalizedScan 序列默认自动选 absolute，保留化学态边移轨迹
+        fracs = (0.1, 0.35, 0.65, 0.9)
+        series = []
+        for idx, f4 in enumerate(fracs):
+            yi = (1.0 - f4) * y0 + f4 * y4
+            sc = NormalizedScan(energy=e, mu=yi, mu_norm=yi, pre_edge_line=zeros,
+                                edge_step=1.0, plateau=1.0,
+                                e0=11564.0 + 4.0 * f4, flattened=yi)
+            series.append((f"t{idx}", sc))
+        with patch.object(xafs_lcf.athena, "extract_xanes_features",
+                          return_value={"e_half_height": 11565.0, "white_line_height": 1.2}):
+            op = xafs_lcf.run_operando_series(series, standards={"S0": s0, "S4": s4})
+        self.assertEqual(op["energy_scale"], "absolute")
+        w4 = [pt["weights"]["S4"] for pt in op["lcf_series"]]
+        self.assertTrue(all(w4[i] < w4[i + 1] for i in range(len(w4) - 1)))
+
+        # 重原子金属相干高 k 振幅（tail_hf_ratio 低 + reliable_kmax 高）不得误报噪声
+        res_pt_foil = SimpleNamespace(
+            merged=SimpleNamespace(meta={}),
+            norm=SimpleNamespace(e0=11564.0, edge_step=1.2, plateau=1.0,
+                                 energy=np.linspace(11500.0, 12500.0, 100)),
+            rbkg={"rbkg": 0.90, "r1": 2.48, "intrusion_risk": False},
+            ft=SimpleNamespace(kmax=12.0),
+            snr={"k_snr2": None, "single_scan_estimate": {
+                "k_snr2": None, "reliable_kmax": 16.0,
+                "tail_rise_ratio": 1.40, "tail_hf_ratio": 0.06,
+            }},
+        )
+        rep_foil = data_audit.audit_preprocessing(res_pt_foil)
+        self.assertNotIn("high_k_tail_amplification", {c["id"] for c in rep_foil["checks"]})
+
+        res_noisy_tail = SimpleNamespace(
+            merged=SimpleNamespace(meta={}),
+            norm=SimpleNamespace(e0=11564.0, edge_step=1.2, plateau=1.0,
+                                 energy=np.linspace(11500.0, 12500.0, 100)),
+            rbkg={"rbkg": 0.90, "r1": 1.60, "intrusion_risk": False},
+            ft=SimpleNamespace(kmax=12.0),
+            snr={"k_snr2": None, "single_scan_estimate": {
+                "k_snr2": None, "reliable_kmax": 11.0,
+                "tail_rise_ratio": 1.20, "tail_hf_ratio": 0.35,
+            }},
+        )
+        rep_noisy = data_audit.audit_preprocessing(res_noisy_tail)
+        self.assertIn("high_k_tail_amplification", {c["id"] for c in rep_noisy["checks"]})
+
+    @unittest.skipUnless(_HAS_LARCH, "process_xanes_scan uses real larch pre_edge")
+    def test_process_xanes_scan_handles_short_xanes_only_standards(self):
+        import xafs_pipeline
+
+        e = np.linspace(7070.0, 7220.0, 151)
+        y_low = 0.5 * (1.0 + np.tanh((e - 7112.0) / 2.2)) + 0.30 * np.exp(-((e - 7115.0) / 3.0) ** 2)
+        y_hi = 0.5 * (1.0 + np.tanh((e - 7116.0) / 2.2)) + 0.55 * np.exp(-((e - 7119.0) / 3.0) ** 2)
+        y_mix = 0.40 * y_low + 0.60 * y_hi
+        zeros = np.zeros_like(e)
+        targ = NormalizedScan(energy=e, mu=y_mix, mu_norm=y_mix, pre_edge_line=zeros,
+                              edge_step=1.0, plateau=1.0, e0=7114.8, flattened=y_mix)
+        with tempfile.TemporaryDirectory() as tmp:
+            p1 = Path(tmp) / "std_low.dat"
+            p2 = Path(tmp) / "std_hi.dat"
+            p1.write_text("# E mu\n" + "\n".join(f"{a:.2f} {0.2 + 0.8 * b:.6f}" for a, b in zip(e, y_low)), encoding="utf-8")
+            p2.write_text("# E mu\n" + "\n".join(f"{a:.2f} {0.1 + 0.9 * b:.6f}" for a, b in zip(e, y_hi)), encoding="utf-8")
+            n1 = xafs_pipeline.process_xanes_scan([str(p1)], absorber="Fe")
+            n2 = xafs_pipeline.process_xanes_scan([str(p2)], edge_energy=7114.8)
+        self.assertAlmostEqual(n1.edge_step, 0.8, delta=0.05)
+        self.assertAlmostEqual(n2.edge_step, 0.9, delta=0.05)
+        lcf = xafs_lcf.lcf_from_scans(
+            targ, {"low": n1, "hi": n2}, mode="xanes",
+            xmin=7095.0, xmax=7170.0, energy_scale="absolute",
+        )
+        self.assertAlmostEqual(lcf["weights"]["low"], 0.40, delta=0.03)
+        self.assertAlmostEqual(lcf["weights"]["hi"], 0.60, delta=0.03)
+
 
 if __name__ == "__main__":
     unittest.main()

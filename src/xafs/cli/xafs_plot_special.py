@@ -878,6 +878,86 @@ def write_rdf_figure(fit_out, outdir, stem: str, *,
     return written
 
 
+def write_lcf_figure(res, lcf_res: dict | None, outdir, stem: str, *,
+                     formats: tuple[str, ...] = ("png",),
+                     dpi: int = 300) -> list[Path]:
+    """绘制 XANES LCF 拟合对比与残差图（<stem>_xanes_lcf.<ext>，严格 ASCII 标签）。"""
+    if not isinstance(lcf_res, dict) or not lcf_res:
+        return []
+    x = np.asarray(lcf_res.get("x") if lcf_res.get("x") is not None else [], dtype=float)
+    y = np.asarray(lcf_res.get("y") if lcf_res.get("y") is not None else [], dtype=float)
+    y_fit = np.asarray(lcf_res.get("y_fit") if lcf_res.get("y_fit") is not None else [], dtype=float)
+    if x.size < 3 or y.size != x.size or y_fit.size != x.size:
+        return []
+
+    apply_plot_style()
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    fig, (ax_top, ax_res) = plt.subplots(
+        2, 1, figsize=(6.4, 5.2), sharex=True,
+        gridspec_kw={"height_ratios": [3.0, 1.2], "hspace": 0.08},
+    )
+    ax_top.plot(x, y, color="#1b6ca8", lw=1.7, label="data")
+    ax_top.plot(x, y_fit, color="#d1495b", lw=1.5, ls="--", label="LCF fit")
+    ax_top.set_ylabel(r"Normalized $\mu(E)$")
+    sample_lbl = str(getattr(res, "stem", None) or stem or "sample")
+    ax_top.set_title(f"XANES Linear Combination Fit: {sample_lbl}", fontsize=10.5, loc="left")
+    ax_top.legend(frameon=False, fontsize=8.5, loc="upper left")
+
+    weights = lcf_res.get("weights") or {}
+    w_err = lcf_res.get("weight_err") or {}
+    info_lines = []
+    for cname, wval in weights.items():
+        err = w_err.get(cname) if isinstance(w_err, dict) else None
+        if err is not None and np.isfinite(err):
+            info_lines.append(f"{cname}: {float(wval):.3f}±{float(err):.3f}")
+        else:
+            info_lines.append(f"{cname}: {float(wval):.3f}")
+    rf_val = float(lcf_res.get("r_factor", float("nan")))
+    scale_lbl = str(lcf_res.get("energy_scale") or "relative_e0")
+    if np.isfinite(rf_val):
+        info_lines.append(f"R-factor = {rf_val:.4f}")
+    info_lines.append(f"scale = {scale_lbl}")
+    ax_top.text(
+        0.97, 0.06, "\n".join(info_lines),
+        transform=ax_top.transAxes, ha="right", va="bottom",
+        fontsize=8.0, family="monospace",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": "#f7f9fc",
+              "edgecolor": "#b0bec5", "alpha": 0.92},
+    )
+
+    align_chk = lcf_res.get("alignment_check")
+    if isinstance(align_chk, dict) and align_chk.get("recommended_shift_eV") is not None:
+        shift_ev = float(align_chk["recommended_shift_eV"])
+        base_rf = float(align_chk.get("base_r_factor", rf_val))
+        sh_rf = float(align_chk.get("shifted_r_factor", rf_val))
+        warn_txt = f"ALIGN WARN: shift stds {shift_ev:+.1f} eV reduces Rf {base_rf:.4f} -> {sh_rf:.4f}"
+        ax_top.text(
+            0.03, 0.78, warn_txt,
+            transform=ax_top.transAxes, ha="left", va="top",
+            fontsize=7.8, color="#8c2f00",
+            bbox={"boxstyle": "round,pad=0.3", "facecolor": "#fff3e0",
+                  "edgecolor": "#ef6c00", "alpha": 0.95},
+        )
+
+    resid = y - y_fit
+    ax_res.plot(x, resid, color="#37474f", lw=1.1, label="residual (data - fit)")
+    ax_res.axhline(0.0, color="0.65", lw=0.8, ls="--")
+    ax_res.set_ylabel("Residual")
+    ax_res.set_xlabel("Photon Energy (eV)" if scale_lbl == "absolute" else r"$E - E_0$ (eV)")
+    ax_res.legend(frameon=False, fontsize=7.5, loc="upper right")
+
+    fig.subplots_adjust(left=0.13, right=0.96, top=0.91, bottom=0.11, hspace=0.08)
+    written: list[Path] = []
+    for ext in formats:
+        ext_clean = str(ext).strip().lstrip(".") or "png"
+        out_path = outdir / f"{stem}_xanes_lcf.{ext_clean}"
+        xafs_writer.safe_savefig(fig, out_path, dpi=int(dpi), bbox_inches="tight")
+        written.append(out_path)
+    plt.close(fig)
+    return written
+
+
 def write_operando_diagnostics(operando_out: dict, outdir,
                                stem: str = "operando") -> dict:
     """原位序列（Operando）组分分数/LCF/价态描述符演化导出。"""
@@ -975,7 +1055,13 @@ def write_operando_diagnostics(operando_out: dict, outdir,
     ax = axes[1, 1]
     for j in range(k):
         ax.plot(xg, S[:, j], lw=1.4, label=f"component {j + 1}")
-    ax.set_xlabel("energy relative to E0 (eV)")
+    if str(operando_out.get("mode") or "") == "exafs":
+        ax.set_xlabel(r"$k$ ($\AA^{-1}$)")
+    elif (str(operando_out.get("energy_scale") or "") == "absolute"
+          or (xg.size > 0 and float(np.nanmin(xg)) > 100.0)):
+        ax.set_xlabel("photon energy (eV)")
+    else:
+        ax.set_xlabel("energy relative to E0 (eV)")
     ax.set_ylabel("normalized pure component")
     ax.set_title("MCR-ALS pure component spectra (energy-sorted)")
     ax.legend(fontsize=8, frameon=False)
@@ -1135,6 +1221,20 @@ def write_summary_csv(outdir: Path, stem: str, res: PipelineResult,
             f"{float(sft['confidence']):.4f}",
             "",
             f"Hamilton F-test significant={bool(sft.get('significant'))} (需≥0.95)",
+        ])
+    lcf_res = getattr(res, "lcf", None)
+    if isinstance(lcf_res, dict) and lcf_res.get("weights") and "xanes_lcf" not in existing_keys:
+        w_txt = ", ".join(f"{k}={float(v):.3f}" for k, v in lcf_res["weights"].items())
+        rf_txt = (f" (Rf={float(lcf_res['r_factor']):.4g})"
+                  if lcf_res.get("r_factor") is not None else "")
+        note_parts = [f"energy_scale={lcf_res.get('energy_scale') or 'relative_e0'}"]
+        if lcf_res.get("alignment_warning"):
+            note_parts.append(str(lcf_res["alignment_warning"]))
+        rows.append([
+            "xanes_lcf",
+            f"{w_txt}{rf_txt}",
+            "",
+            "; ".join(note_parts),
         ])
     path = outdir / f"{stem}_summary.csv"
     return xafs_writer.safe_write_csv(path, ["item", "value", "unit", "note"], rows)

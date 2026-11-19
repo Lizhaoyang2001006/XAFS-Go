@@ -434,6 +434,9 @@ def identify_result(res, absorber_symbol: str | None = None, **kw):
     vary_c3 = kw.pop("vary_c3", False)
     fit_space = kw.pop("fit_space", "r")
     s02 = kw.pop("s02", None)
+    fit_rmin = kw.pop("fit_rmin", None)
+    fit_rmax = kw.pop("fit_rmax", None)
+    kweights = kw.pop("kweights", None)
     absorber_symbol = absorber_symbol or getattr(res, "absorber_symbol", None)
     out = identify(res.ft, res.chi_k.k, absorber_symbol=absorber_symbol,
                    kmin=res.ft.kmin, kmax=res.ft.kmax,
@@ -456,11 +459,24 @@ def identify_result(res, absorber_symbol: str | None = None, **kw):
                      "该字段只披露所用假设，不代表调用方已确认"),
         }
         try:
-            out["l1_first_shell"] = l1_first_shell_fit(
+            l1_out, l1_fit, l1_files = _l1_first_shell_fit_full(
                 res, absorber_symbol=absorber_symbol,
                 ligand=l1_ligand, geometry=l1_geometry,
+                rmin=fit_rmin, rmax=fit_rmax, kweights=kweights,
                 vary_c3=vary_c3, fit_space=fit_space, s02=s02,
                 verbose=kw.get("verbose", True))
+            out["l1_first_shell"] = l1_out
+            kw_key = (tuple(int(w) for w in kweights)
+                      if isinstance(kweights, (list, tuple)) else kweights)
+            res._l1_fit_artifacts = {
+                "fit": l1_fit,
+                "path_files": l1_files,
+                "sig": (absorber_symbol, l1_ligand, l1_geometry,
+                        fit_rmin, fit_rmax, kw_key,
+                        vary_c3, fit_space, s02),
+                "ligand": l1_ligand,
+                "geometry": l1_geometry,
+            }
             margin = out["confidence"]["margin"]
             margin_txt = "n/a" if margin is None else f"{margin:.3f}"
             out["l1_note"] = (
@@ -532,27 +548,17 @@ def synthetic_shell_motif(absorber_symbol: str, ligand: str = "O",
         sites=sites)
 
 
-def l1_first_shell_fit(res, absorber_symbol: str | None = None,
-                       ligand: str = "O", geometry: str = "oct",
-                       r0: float | None = None,
-                       vary_c3: bool | list | str = False,
-                       fit_space: str = "r",
-                       s02: float | None = None,
-                       verbose: bool = True) -> dict:
-    """
-    无结构第一壳拟合：合成团簇的 SS 路径拟 N/R/σ²/ΔE0。
-
-    适用：弱结晶/非晶/库外体系——此时只有第一壳可信，
-    长程拟合是强行给数据安结构。r0 默认取**配体感知选出的第一壳峰**
-    +0.45 Å（相位粗估）：由共价半径和估预期键长，在显著峰里选最接近
-    者（避免把 Fe 氧化物的 Fe–Fe 第二壳或 Pt L3 的低 R 白线伪峰当
-    第一壳）；拟合会精修 ΔR，初值偏差不进最终结果。R 窗上限随表观
-    峰扩展（≥2.3，≤3.0 Å），长键金属不会被截在窗外。
-
-    ``ligand`` / ``geometry`` 是显式结构假设，默认 O/oct 只适用于多数
-    氧化物；硫化物、氯化物、四面体体系必须由调用方覆盖。输出里会保留
-    这两个假设，避免把 L1 的 N 误解成“无模型 CN”。
-    """
+def _l1_first_shell_fit_full(res, absorber_symbol: str | None = None,
+                             ligand: str = "O", geometry: str = "oct",
+                             r0: float | None = None,
+                             rmin: float | None = None,
+                             rmax: float | None = None,
+                             kweights=None,
+                             vary_c3: bool | list | str = False,
+                             fit_space: str = "r",
+                             s02: float | None = None,
+                             verbose: bool = True):
+    """L1 第一壳完整拟合内核，返回 (json_dict, FitResult, path_files)。"""
     absorber_symbol = absorber_symbol or getattr(res, "absorber_symbol", None)
     if not absorber_symbol:
         raise XAFSConfigError("structure_id",
@@ -584,10 +590,24 @@ def l1_first_shell_fit(res, absorber_symbol: str | None = None,
         raise XAFSDataError("structure_id",
                             f"L1 团簇在 {r0:.2f}±0.35 Å 内无 SS 路径")
     datfiles = [cache / r["file"] for r in ss]
-    # R 窗上限必须随第一壳表观峰走：固定 2.3 Å 会把长键（Pt–Pt 2.77 /
-    # Fe–Fe 2.48）的模型峰截在窗外，曾给出 Rf=1.0 的伪失败。取表观峰
-    # +0.15 Å（主瓣右肩），下限 2.3，上限 3.0（不放进第二壳）。
-    rmax_fit = min(3.0, max(2.3, (r0 - 0.45) + 0.15))
+    path_labels = [
+        (f"{absorber.symbol}-{ligand}" if len(datfiles) == 1
+         else f"{absorber.symbol}-{ligand}_{i + 1}")
+        for i in range(len(datfiles))
+    ]
+    # R 窗上限默认随第一壳表观峰走；若用户/调用方显式指定 rmin/rmax，严格遵从。
+    rmin_fit = 1.0 if rmin is None else float(rmin)
+    rmax_fit = (min(3.0, max(2.3, (r0 - 0.45) + 0.15))
+                if rmax is None else float(rmax))
+    if not (np.isfinite(rmin_fit) and np.isfinite(rmax_fit) and rmin_fit < rmax_fit):
+        raise XAFSConfigError(
+            "structure_id",
+            f"L1 拟合 R 窗非法：rmin={rmin_fit} 必须小于 rmax={rmax_fit}")
+    if kweights:
+        kw_fit = (tuple(int(w) for w in kweights)
+                  if isinstance(kweights, (list, tuple)) else int(kweights))
+    else:
+        kw_fit = res.ft.kweight
     if isinstance(vary_c3, str):
         key = vary_c3.strip().lower()
         c3_arg = ([0] if key == "first" else
@@ -602,11 +622,12 @@ def l1_first_shell_fit(res, absorber_symbol: str | None = None,
     def _run_fit(c3):
         return artemis.fit_r_space(
             res.chi_k, res.ft, datfiles,
-            rmin=1.0, rmax=rmax_fit,
+            rmin=rmin_fit, rmax=rmax_fit,
             kmin=res.ft.kmin, kmax=res.ft.kmax,
-            kweight=res.ft.kweight, s02=absorber.s02,
+            kweight=kw_fit, s02=absorber.s02,
             vary_delta_e0=True, vary_n=True,
             vary_c3=(c3 if c3 is not None else False),
+            path_labels=path_labels,
             fit_space=fit_space)
 
     # 与 xafs_fit 同口径：底层对 N_var ≥ N_idp 在求解前硬拒绝（Stern），
@@ -640,7 +661,12 @@ def l1_first_shell_fit(res, absorber_symbol: str | None = None,
     n_err = (float(np.sqrt(sum((p.n_err or 0.0) ** 2 for p in fit.paths)))
              if any(p.n_err is not None for p in fit.paths) else None)
     p_main = max(fit.paths, key=lambda p: p.degeneracy)
+    kw_list = (list(int(w) for w in kw_fit)
+               if isinstance(kw_fit, (list, tuple)) else [int(kw_fit)])
+    path_files_str = [str(f) for f in datfiles]
     out = {"geometry": geometry, "ligand": ligand, "r0": round(r0, 4),
+           "rmin": round(rmin_fit, 4), "rmax": round(rmax_fit, 4),
+           "kweights": kw_list, "path_files": path_files_str,
            "N": round(n_total, 2),
            "N_err": round(n_err, 2) if n_err is not None else None,
            "R": round(p_main.r, 4), "R_err": round(p_main.delta_r_err, 4),
@@ -673,6 +699,38 @@ def l1_first_shell_fit(res, absorber_symbol: str | None = None,
               f"N={out['N']}±{out['N_err']}, R={out['R']} Å, "
               f"σ²={out['sigma2']}, Rf={out['rf']}")
         print(f"       ⚠ {out['warning']}")
+    return out, fit, path_files_str
+
+
+def l1_first_shell_fit(res, absorber_symbol: str | None = None,
+                       ligand: str = "O", geometry: str = "oct",
+                       r0: float | None = None,
+                       rmin: float | None = None,
+                       rmax: float | None = None,
+                       kweights=None,
+                       vary_c3: bool | list | str = False,
+                       fit_space: str = "r",
+                       s02: float | None = None,
+                       verbose: bool = True) -> dict:
+    """
+    无结构第一壳拟合：合成团簇的 SS 路径拟 N/R/σ²/ΔE0。
+
+    适用：弱结晶/非晶/库外体系——此时只有第一壳可信，
+    长程拟合是强行给数据安结构。r0 默认取**配体感知选出的第一壳峰**
+    +0.45 Å（相位粗估）：由共价半径和估预期键长，在显著峰里选最接近
+    者（避免把 Fe 氧化物的 Fe–Fe 第二壳或 Pt L3 的低 R 白线伪峰当
+    第一壳）；拟合会精修 ΔR，初值偏差不进最终结果。R 窗上限随表观
+    峰扩展（≥2.3，≤3.0 Å），长键金属不会被截在窗外。
+
+    ``ligand`` / ``geometry`` 是显式结构假设，默认 O/oct 只适用于多数
+    氧化物；硫化物、氯化物、四面体体系必须由调用方覆盖。输出里会保留
+    这两个假设，避免把 L1 的 N 误解成“无模型 CN”。
+    """
+    out, _, _ = _l1_first_shell_fit_full(
+        res, absorber_symbol=absorber_symbol, ligand=ligand,
+        geometry=geometry, r0=r0, rmin=rmin, rmax=rmax,
+        kweights=kweights, vary_c3=vary_c3, fit_space=fit_space,
+        s02=s02, verbose=verbose)
     return out
 
 

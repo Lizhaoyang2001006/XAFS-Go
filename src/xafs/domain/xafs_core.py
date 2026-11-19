@@ -311,3 +311,4 @@ class PipelineResult:
     data_sha256: str = ""             # 原始输入文件 SHA256（审计/复现）
     kmax_clamp: Optional[dict] = None  # 入口按元素裁剪 kmax 的记录（P1.1；未裁剪为 None）
     audit: Optional[dict] = None       # S1–S5 自动数据质量审计报告（eshift/噪声/Rbkg/极性）
+    lcf: Optional[dict] = None         # B2-2 XANES 线性组合拟合结果（--lcf-standards 时填充）
